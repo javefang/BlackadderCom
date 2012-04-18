@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="hello">Hello World, BlackadderComActivity!</string>
+    <string name="app_name">BlackadderCom</string>
+    <string name="clientIdHint">Enter client ID here (16 byte)</string>
+    <string name="receiveVoice">Receive</string>
+    <string name="sendVoice">Send</string>
+    <string name="init">Initialise</string>
+    <string name="test">Test</string>
+
+</resources>

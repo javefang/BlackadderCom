@@ -1,0 +1,32 @@
+LOCAL_PATH := $(MY_LOCAL_PATH)/pubsub
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := tppub
+LOCAL_SRC_FILES := tppub.cpp
+LOCAL_SHARED_LIBRARIES += blackadder
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := qsub
+LOCAL_SRC_FILES := qsub.cpp
+LOCAL_SHARED_LIBRARIES += blackadder
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)
+include $(BUILD_EXECUTABLE)
+
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := publisher
+LOCAL_SRC_FILES := publisher.cpp
+LOCAL_SHARED_LIBRARIES += blackadder
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE :=	subscriber
+LOCAL_SRC_FILES := subscriber.cpp
+LOCAL_SHARED_LIBRARIES += blackadder
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)
+include $(BUILD_EXECUTABLE)
+
+$(call import-module,blackadder)

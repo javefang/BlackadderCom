@@ -1,0 +1,1 @@
+NDK_MODULE_PATH=jni ndk-build

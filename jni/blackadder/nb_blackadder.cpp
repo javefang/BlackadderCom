@@ -62,12 +62,11 @@ void *NB_Blackadder::worker(void *arg) {
     while (true) {
         pthread_mutex_lock(&worker_mutex);
         pthread_cond_wait(&worker_cond, &worker_mutex);
-        
         while (event_queue.size() > 0) {
             ev = event_queue.front();
             event_queue.pop();
             pthread_mutex_unlock(&worker_mutex);
-            cf(ev); 
+            cf(ev);
             pthread_mutex_lock(&worker_mutex);
         }
         pthread_mutex_unlock(&worker_mutex);
@@ -89,7 +88,7 @@ void *NB_Blackadder::selector(void *arg) {
     } else {
         high_sock = sock_fd;
     }
-    while (true) {	/* CHANGE: check flag to detect if thread should terminate */
+    while (true) {
         if (select(high_sock + 1, &read_set, &write_set, NULL, NULL) == -1) {
             perror("NB_Blackadder Library: select() error..retrying!");
         } else {
@@ -262,8 +261,21 @@ NB_Blackadder::~NB_Blackadder() {
         pthread_cond_wait(&queue_overflow_cond, &selector_mutex);
     }
     pthread_mutex_unlock(&selector_mutex);
-    //    pthread_cancel(worker_thread);
-    //    pthread_cancel(selector_thread);
+    
+    // kill selector and worker threads (incomplete)
+    /*
+    Event *kill_ev = new Event();
+    kill_ev->type = TERMINATE_THREAD;
+    pthread_mutex_lock(&selector_mutex);
+    output_queue.push(kill_ev);
+    if (output_queue.size() == 1000) {
+      pthread_cond_wait(&queue_overflow_cond, &selector_mutex);
+    }
+    pthread_con
+    */
+
+    // pthread_cancel(worker_thread);
+    // pthread_cancel(selector_thread);
     if (sock_fd != -1) {
         close(sock_fd);
         cout << "NB_Blackadder Library: Closed netlink socket" << endl;

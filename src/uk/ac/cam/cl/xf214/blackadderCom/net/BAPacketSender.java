@@ -10,9 +10,9 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAWrapperNB;
 import uk.ac.cam.cl.xf214.blackadderWrapper.Strategy;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.BAPushControlEventAdapter;
+import uk.ac.cam.cl.xf214.blackadderWrapper.callback.BAPushControlEventHandler;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAItem;
-import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAPrefix;
 
 public class BAPacketSender {
 	public static final String TAG = "BAPacketSender";
@@ -23,18 +23,19 @@ public class BAPacketSender {
 	
 	private BAItem item;
 	private byte[] fullId;
-	private BAPrefix baPrefix;
+	private BAPushControlEventHandler eventHandler;
+	private int pktCount;
 	
 	private volatile boolean canPublish;
-	private volatile boolean finished;
+	private volatile boolean released;
 	
 	public BAPacketSender(final BAWrapperNB wrapper, final HashClassifierCallback classifier, final BAItem item) {
-		this.finished = false;
+		this.released = false;
 		this.wrapper = wrapper;
 		this.classifier = classifier;
 		this.item = item;
 		this.fullId = item.getFullId();
-		baPrefix = new BAPrefix(fullId, new BAPushControlEventAdapter() {
+		this.eventHandler = new BAPushControlEventAdapter() {
 			@Override
 			public void startPublish(BAEvent event) {
 				Log.i(TAG, "START_PUBLISH called");
@@ -44,6 +45,7 @@ public class BAPacketSender {
 				} else {
 					Log.e(TAG, "Incorrect scope id for START_PUBLISH event, event id is " + BAHelper.byteToHex(event.getId()));
 				}
+				event.freeNativeBuffer();
 			}
 			
 			@Override
@@ -55,16 +57,17 @@ public class BAPacketSender {
 				} else {
 					Log.e(TAG, "Incorrect scope id for STOP_PUBLISH event, event id is " + BAHelper.byteToHex(event.getId()));
 				}
+				event.freeNativeBuffer();
 			}
-		});
-		canPublish = false;	
+		};
 		
 		// register listener for start stop publishing
 		Log.i(TAG, "Registering control queue with prefix: " + item.getIdHex());
-		classifier.registerControlQueue(baPrefix);
+		classifier.registerControlQueue(fullId, eventHandler);
 		
 		// publish item
-		wrapper.publishItem(item.getId(), item.getPrefix(), STRATEGY, null);		
+		wrapper.publishItem(item.getId(), item.getPrefix(), STRATEGY, null);
+		Log.i(TAG, "BAPacketSender initialization complete!");
 	}
 	
 	public void send(byte[] data) {
@@ -78,14 +81,20 @@ public class BAPacketSender {
 		}
 	}
 	
-	public void finish() {
+	public void send(ByteBuffer data) {
+		if (canPublish) {
+			wrapper.publishData(fullId, STRATEGY, null, data);
+		}
+	}
+	
+	public void release() {
 		// unpublish item
-		if (!finished) {
-			finished = true;
+		if (!released) {
+			released = true;
 			canPublish = false;	// prevent further send operation
 			wrapper.unpublishItem(item.getId(), item.getPrefix(), STRATEGY, null);
 			Log.i(TAG, "Unregistering control queue with prefix: " + item.getIdHex());
-			classifier.unregisterControlQueue(baPrefix);
+			classifier.unregisterControlQueue(fullId);
 		}
 	}
 }

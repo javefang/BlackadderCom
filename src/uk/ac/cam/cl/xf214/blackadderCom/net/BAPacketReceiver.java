@@ -17,10 +17,10 @@ public class BAPacketReceiver {
 	private BlockingQueue<BAEvent> dataQueue;
 	private HashClassifierCallback classifier;
 	private StreamFinishedListener streamFinishedListener;
-	private volatile boolean finished;
+	private volatile boolean released;
 	
 	public BAPacketReceiver(HashClassifierCallback classifier, byte[] rid, StreamFinishedListener streamFinishedListener) {
-		this.finished = false;
+		this.released = false;
 		this.classifier = classifier;
 		this.rid = Arrays.copyOf(rid, rid.length);
 		this.streamFinishedListener = streamFinishedListener;
@@ -39,24 +39,28 @@ public class BAPacketReceiver {
 		return rid;
 	}
 	
-	public void finish() {
-		if (!finished) {
+	public void release() {
+		if (!released) {
 			Log.i(TAG, "Finishing BAPacketReceiver for info " + BAHelper.byteToHex(rid));
-			finished = true;
+			released = true;
 			classifier.unregisterDataQueue(rid);	// further event will not be sent to the data queue
 			// now events are sent to AndroidVoiceProxy, but will be ignored as the stream hasdID of this stream still hasn't been unregistered from the proxy
 			streamFinishedListener.streamFinished(rid);	// unregister stream hashID from the proxy
 			// now events are sent to AndroidVoiceProxy, which may create new receiver and player thread
 			Log.i(TAG, "Draining data queue...");
-			// drain the queue. free all memory
-			Vector<BAEvent> wasteEventQueue = new Vector<BAEvent>();
-			dataQueue.drainTo(wasteEventQueue);
-			for (int i = 0; i < wasteEventQueue.size(); i++) {
-				wasteEventQueue.get(i).freeNativeBuffer();
-			}
+			drainDataQueue();
 			Log.i(TAG, "Receiver finished!");
 		} else {
 			Log.i(TAG, "Receiver already finished");
+		}
+	}
+	
+	public void drainDataQueue() {
+		// drain the queue. free all memory
+		Vector<BAEvent> wasteEventQueue = new Vector<BAEvent>();
+		dataQueue.drainTo(wasteEventQueue);
+		for (BAEvent event : wasteEventQueue) {
+			event.freeNativeBuffer();
 		}
 	}
 }

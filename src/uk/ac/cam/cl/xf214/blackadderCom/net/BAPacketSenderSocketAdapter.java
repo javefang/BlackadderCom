@@ -25,7 +25,7 @@ public class BAPacketSenderSocketAdapter extends BAPacketSender {
 	private LocalSocket sendSocket;
 	private Thread dataTransportThread;
 	
-	private volatile boolean finished;
+	private volatile boolean released;
 	
 	public BAPacketSenderSocketAdapter(BAWrapperNB wrapper, HashClassifierCallback classifier, BAItem item) throws IOException {
 		super(wrapper, classifier, item);
@@ -51,13 +51,13 @@ public class BAPacketSenderSocketAdapter extends BAPacketSender {
 			private InputStream inputStream;
 			
 			public void run() {
-				finished = false;
+				released = false;
 				byte[] buf = new byte[BAWrapperShared.DEFAULT_PKT_SIZE];
 				try {
 					inputStream = recvSocket.getInputStream();
 					
 					Log.i(TAG, "Socket->BA bridging loop start!");
-					while (!finished) {
+					while (!released) {
 						// read data packet from socket to buffer
 						readFully(buf, 0, buf.length);
 						// send data in the buffer via Blackadder
@@ -65,7 +65,7 @@ public class BAPacketSenderSocketAdapter extends BAPacketSender {
 					}
 				} catch (IOException e1) {
 					Log.e(TAG, "IOException caught while getting input stream from recvSocket, abort...");
-					finish();
+					release();
 				}
 				
 				Log.i(TAG, "Socket->BA transport thread terminated!");
@@ -90,17 +90,17 @@ public class BAPacketSenderSocketAdapter extends BAPacketSender {
 	}
 	
 	public FileDescriptor getFileDescriptor() {
-		if (!finished) {
+		if (!released) {
 			return sendSocket.getFileDescriptor();
 		} else {
 			return null;
 		}
 	}
 	
-	public synchronized void finish() {
-		if (!finished) {
+	public synchronized void release() {
+		if (!released) {
 			Log.i(TAG, "Finishing thread...");
-			finished = true;
+			released = true;
 			Log.i(TAG, "Closing socket...");
 			try {
 				sendSocket.close();	// this causes app failed to write new data into the stream
@@ -111,7 +111,7 @@ public class BAPacketSenderSocketAdapter extends BAPacketSender {
 			}
 			dataTransportThread.interrupt();
 			// TODO: join thread here? (avoid calling send() after super class finished)
-			super.finish();
+			super.release();
 		}
 	}
 

@@ -23,7 +23,7 @@ public class BAPacketRecieverSocketAdapter extends BAPacketReceiver {
 	private LocalSocket sendSocket;
 	private Thread dataTransportThread;
 	
-	private volatile boolean finished;
+	private volatile boolean released;
 	
 	public BAPacketRecieverSocketAdapter(HashClassifierCallback classifier,
 			byte[] rid, StreamFinishedListener streamFinishedListener) throws IOException {
@@ -47,14 +47,14 @@ public class BAPacketRecieverSocketAdapter extends BAPacketReceiver {
 			private OutputStream outputStream;
 
 			public void run() {
-				finished = false;
+				released = false;
 				BlockingQueue<BAEvent> dataQueue = getDataQueue();
 				byte[] buf;
 				BAEvent event;
 				try {
 					outputStream = sendSocket.getOutputStream();
 					Log.i(TAG, "BA->Socket bridging loop start!");
-					while (!finished) {
+					while (!released) {
 						// get a data event from BA
 						event = dataQueue.take();
 						// get the data buffer
@@ -64,7 +64,7 @@ public class BAPacketRecieverSocketAdapter extends BAPacketReceiver {
 					}
 				} catch (IOException e) {
 					Log.e(TAG, "IOException caught, abort...");
-					finish();
+					release();
 				} catch (InterruptedException e) {
 					// caused by thread interruption when waiting on BlockingQueue
 					Log.e(TAG, "Bridging thread interrupted while waiting for event on BlockingQueue!");
@@ -83,16 +83,16 @@ public class BAPacketRecieverSocketAdapter extends BAPacketReceiver {
 	}
 	
 	public FileDescriptor getFileDescriptor() {
-		if (!finished) {
+		if (!released) {
 			return recvSocket.getFileDescriptor();
 		} else {
 			return null;
 		}
 	}
 	
-	public synchronized void finish() {
-		if (!finished) {
-			finished = true;
+	public synchronized void release() {
+		if (!released) {
+			released = true;
 			Log.i(TAG, "Closing socket...");
 			try {
 				sendSocket.close();
@@ -103,7 +103,7 @@ public class BAPacketRecieverSocketAdapter extends BAPacketReceiver {
 			}
 			dataTransportThread.interrupt();
 			// TODO: join thread here?
-			super.finish();
+			super.release();
 		}
 	}
 

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_margin="10dp">
+
+        <EditText
+            android:id="@+id/clientIdInput"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="@string/clientIdHint"
+            android:maxLength="16" />
+
+        <Button
+            android:id="@+id/btn_init"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/init" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_margin="10dp">
+
+        <ToggleButton
+            android:id="@+id/tb_send"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="@string/sendVoice"
+            android:textOff="@string/sendVoice"
+            android:textOn="@string/sendVoice" />
+
+        <ToggleButton
+            android:id="@+id/tb_recv"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="@string/receiveVoice"
+            android:textOff="@string/receiveVoice"
+            android:textOn="@string/receiveVoice" />
+
+        <RadioGroup
+            android:id="@+id/rg_codec"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <RadioButton
+                android:id="@+id/rb_pcm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/codec_pcm" />
+
+            <RadioButton
+                android:id="@+id/rb_speex"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/codec_speex" />
+        </RadioGroup>
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/btn_ptt"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:src="@drawable/mic" />
+</LinearLayout>

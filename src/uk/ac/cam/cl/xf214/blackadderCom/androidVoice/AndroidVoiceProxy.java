@@ -6,6 +6,7 @@ import java.util.HashMap;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
+import uk.ac.cam.cl.xf214.blackadderCom.Node;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiver;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
@@ -30,13 +31,14 @@ public class AndroidVoiceProxy {
 	
 	private VoiceCodec codec = VoiceCodec.PCM;
 	
-	private BAScope voiceScope;
+	private BAScope scope;
+	private BAItem item;
 	private byte[] clientId;
 	private BAPushControlEventHandler eventHandler;
 	
 	private BAWrapperNB wrapper;
 	private HashClassifierCallback classifier;
-	private BAPacketSender sender;
+	//private BAPacketSender sender;
 	private WakeLock wakeLock;
 	
 	private AndroidVoiceRecorder recorder;
@@ -48,14 +50,14 @@ public class AndroidVoiceProxy {
 	private boolean receive;
 	private boolean released;
 	
-	public AndroidVoiceProxy(final BAWrapperNB wrapper, final HashClassifierCallback classifier, byte[] roomId, byte[] clientId, WakeLock wakeLock) {
-		this.wrapper = wrapper;
-		this.classifier = classifier;
-		this.wakeLock = wakeLock;
-		this.clientId = Arrays.copyOf(clientId, clientId.length);
+	public AndroidVoiceProxy(Node node) {
+		this.wrapper = node.getWrapper();
+		this.classifier = node.getClassifier();
+		this.wakeLock = node.getWakeLock();
+		this.clientId = node.getClientId();
 		// process scope id
-		BAScope roomScope = BAScope.createBAScope(roomId);
-		this.voiceScope = BAScope.createBAScope(VOICE_SCOPE_ID, roomScope);
+		this.scope = BAScope.createBAScope(VOICE_SCOPE_ID, node.getRoomScope());
+		this.item = BAItem.createBAItem(clientId, scope);
 		
 		this.eventHandler = new BAPushControlEventAdapter() {
 			@Override
@@ -76,7 +78,7 @@ public class AndroidVoiceProxy {
 							}
 						});
 						AndroidVoicePlayer player = new AndroidVoicePlayer(receiver, codec);
-						streamMap.put(Arrays.hashCode(event.getId()), player);
+						streamMap.put(idHash, player);
 						player.start();
 					}		
 				}
@@ -84,7 +86,7 @@ public class AndroidVoiceProxy {
 			}
 		};
 		
-		wrapper.publishScope(voiceScope.getId(), voiceScope.getPrefix(), STRATEGY, null);
+		wrapper.publishScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
 		streamMap = new HashMap<Integer, AndroidVoicePlayer>();
 	}
 	
@@ -94,13 +96,12 @@ public class AndroidVoiceProxy {
 			return;
 		}
 		send = enabled;
-		if (enabled) {
+		if (enabled) {	// start streaming
 			wakeLock.acquire();
-			BAItem item = BAItem.createBAItem(clientId, voiceScope);
-			sender = new BAPacketSender(wrapper, classifier, item);
+			BAPacketSender sender = new BAPacketSender(wrapper, classifier, item);
 			recorder = new AndroidVoiceRecorder(sender, BAWrapperShared.DEFAULT_PKT_SIZE, codec);
 			recorder.start();
-		} else {	// disabled
+		} else {	// stop streaming
 			if (recorder != null) {
 				recorder.release();
 				recorder = null;
@@ -127,13 +128,13 @@ public class AndroidVoiceProxy {
 			// Step 1 registers control queue so further events can be forwarded to the proxy
 			// Step 2 subscribe to voice scope, starting receiving events about the scope
 			
-			Log.i(TAG, "Registering control queue with prefix: " + voiceScope.getIdHex());
+			Log.i(TAG, "Registering control queue with prefix: " + scope.getIdHex());
 			// 1. register control queue
-			classifier.registerControlQueue(voiceScope.getFullId(), eventHandler);
+			classifier.registerControlQueue(scope.getFullId(), eventHandler);
 			// from now proxy is able to receive events about unmapped new stream (so new streams can be created)
 			
 			// 2. subscribe voice scope
-			wrapper.subscribeScope(voiceScope.getId(), voiceScope.getPrefix(), STRATEGY, null);
+			wrapper.subscribeScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
 			// scope subscribed, from now proxy will receive events about the voice scope
 		} else {
 			// NOTE: the order is important
@@ -142,17 +143,18 @@ public class AndroidVoiceProxy {
 			// Step 3 terminates all active player
 			
 			// 1. unsubscribe voice channel
-			wrapper.unsubscribeScope(voiceScope.getId(), voiceScope.getPrefix(), STRATEGY, null);
+			wrapper.unsubscribeScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
 			// from now proxy will not receive any new events about the voice scope
 			
 			// 2. unregister control queue
-			Log.i(TAG, "Unregistering control queue with prefix: " + voiceScope.getIdHex());
+			Log.i(TAG, "Unregistering control queue with prefix: " + scope.getIdHex());
 			// from now the proxy stops to receive any new control events
-			classifier.unregisterControlQueue(voiceScope.getFullId());
+			classifier.unregisterControlQueue(scope.getFullId());
 			
 			// 3. terminate all active player
-			AndroidVoicePlayer[] playerList = new AndroidVoicePlayer[streamMap.size()];
+			AndroidVoicePlayer[] playerList = null;
 			synchronized(streamMap) {
+				playerList = new AndroidVoicePlayer[streamMap.size()];
 				if (streamMap.size() > 0) {
 					streamMap.values().toArray(playerList);
 				}
@@ -181,7 +183,7 @@ public class AndroidVoiceProxy {
 			setSend(false);
 			setReceive(false);
 		}
-		wrapper.unpublishScope(voiceScope.getId(), voiceScope.getPrefix(), STRATEGY, null);
+		wrapper.unpublishScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
 	}
 	
 	public int getBufSize() {

@@ -11,12 +11,14 @@ import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
 import android.util.Log;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAEvent;
+import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 
 
-public class BAPacketRecieverSocketAdapter extends BAPacketReceiver {
+public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
 	public static final String TAG = "BAPacketRecieverSocketAdapter";
 	public static final String DEFAULT_SOCKET_NAME = "BAVideoReceiver";
+	public static final int RESYNC_THRESHOLD = 10;	// player will resync when queue has 10 unhandled event
 	
 	private LocalServerSocket serverSocket;
 	private LocalSocket recvSocket;
@@ -25,7 +27,7 @@ public class BAPacketRecieverSocketAdapter extends BAPacketReceiver {
 	
 	private volatile boolean released;
 	
-	public BAPacketRecieverSocketAdapter(HashClassifierCallback classifier,
+	public BAPacketReceiverSocketAdapter(HashClassifierCallback classifier,
 			byte[] rid, StreamFinishedListener streamFinishedListener) throws IOException {
 		super(classifier, rid, streamFinishedListener);
 		
@@ -50,24 +52,42 @@ public class BAPacketRecieverSocketAdapter extends BAPacketReceiver {
 				released = false;
 				BlockingQueue<BAEvent> dataQueue = getDataQueue();
 				byte[] buf;
-				BAEvent event;
+				BAEvent event = null;
 				try {
+					
 					outputStream = sendSocket.getOutputStream();
 					Log.i(TAG, "BA->Socket bridging loop start!");
 					while (!released) {
+						if (dataQueue.size() > RESYNC_THRESHOLD) {
+							// when queue size > 10, remove old event to keep audio synced
+							Log.i(TAG, "Resync video");
+							drainDataQueue();
+						}
 						// get a data event from BA
 						event = dataQueue.take();
+						if (event.getDataLength() == 0) {
+							Log.i(TAG, "FIN_PKT received: terminating video " + BAHelper.byteToHex(getRid()));
+							event.freeNativeBuffer();
+							release();
+							break;
+						}
 						// get the data buffer
 						buf = event.getData(0, event.getDataLength());
 						// write to output stream
 						outputStream.write(buf);
+						event.freeNativeBuffer();
 					}
+					event = null;
 				} catch (IOException e) {
 					Log.e(TAG, "IOException caught, abort...");
 					release();
 				} catch (InterruptedException e) {
 					// caused by thread interruption when waiting on BlockingQueue
 					Log.e(TAG, "Bridging thread interrupted while waiting for event on BlockingQueue!");
+				} finally {
+					if (event != null) {
+						event.freeNativeBuffer();
+					}
 				}
 				
 				

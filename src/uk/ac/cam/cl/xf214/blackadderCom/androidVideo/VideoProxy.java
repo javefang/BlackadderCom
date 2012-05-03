@@ -22,7 +22,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAItem;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAScope;
 
-public class AndroidVideoProxy {
+public class VideoProxy {
 	public static final String TAG = "AndroidVideoProxy";
 	public static final byte STRATEGY = Strategy.DOMAIN_LOCAL;
 	public static final byte[] VIDEO_SCOPE_ID = BAHelper.hexToByte("3333333333333333");
@@ -38,17 +38,17 @@ public class AndroidVideoProxy {
 	private WakeLock wakeLock;
 	private SurfaceView[] views;
 	
-	private HashMap<Integer, AndroidVideoPlayer> streamMap;
+	private HashMap<Integer, VideoPlayer> streamMap;
 	private HashMap<Integer, SurfaceView> viewMap;
 	private LinkedList<SurfaceView> viewQueue;
 	
-	private AndroidVideoRecorder recorder;
+	private VideoRecorder recorder;
 	
 	private boolean send;
 	private boolean receive;
 	private boolean released;
 	
-	public AndroidVideoProxy(Node node, SurfaceView[] views) {
+	public VideoProxy(Node node, SurfaceView[] views) {
 		this.wrapper = node.getWrapper();
 		this.classifier = node.getClassifier();
 		this.views = views;
@@ -56,8 +56,8 @@ public class AndroidVideoProxy {
 		this.clientId = node.getClientId();
 		
 		this.viewQueue = new LinkedList<SurfaceView>();
-		for (SurfaceView sv : views) {
-			viewQueue.add(sv);
+		for (int i = 0; i < views.length - 1; i++) {
+			viewQueue.add(views[i]);
 		}
 		
 		// process scope id
@@ -69,32 +69,8 @@ public class AndroidVideoProxy {
 				int idHash = event.getId().hashCode();
 				synchronized(streamMap) {
 					if (!streamMap.containsKey(idHash) && !viewQueue.isEmpty()) {
-						Log.i(TAG, "Creating new stream " + BAHelper.byteToHex(event.getId()));
-						// create BAPacketReceiver and AndroidVoicePlayer
-						
-						try {
-							BAPacketReceiverSocketAdapter receiver = new BAPacketReceiverSocketAdapter(classifier, event.getId(), new StreamFinishedListener() {
-								public void streamFinished(byte[] rid) {
-									int idHash = Arrays.hashCode(rid);
-									synchronized(streamMap) {
-										if (streamMap.containsKey(idHash)) {
-											// remove stream
-											streamMap.remove(idHash);
-											// recycle SurfaceView
-											viewQueue.offer(viewMap.get(idHash));
-										}
-									}
-								}
-							});
-							SurfaceView view = viewQueue.poll();
-							AndroidVideoPlayer player = new AndroidVideoPlayer(receiver, view);
-							streamMap.put(idHash, player);
-							viewMap.put(idHash, view);
-							player.start();
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+						// TODO: creating new stream
+						initiateStream(event.getId(), idHash);
 					}		
 				}
 				event.freeNativeBuffer();
@@ -102,8 +78,40 @@ public class AndroidVideoProxy {
 		};
 		
 		wrapper.publishScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
-		streamMap = new HashMap<Integer, AndroidVideoPlayer>();
+		streamMap = new HashMap<Integer, VideoPlayer>();
 		viewMap = new HashMap<Integer, SurfaceView>();
+	}
+	
+	private void initiateStream(byte[] id, int idHash) {
+		Log.i(TAG, "Creating new stream " + BAHelper.byteToHex(id));
+		// create BAPacketReceiver and AndroidVoicePlayer
+		
+		try {
+			BAPacketReceiverSocketAdapter receiver = new BAPacketReceiverSocketAdapter(classifier, id, new StreamFinishedListener() {
+				public void streamFinished(byte[] rid) {
+					int idHash = Arrays.hashCode(rid);
+					synchronized(streamMap) {
+						if (streamMap.containsKey(idHash)) {
+							// remove stream
+							streamMap.remove(idHash);
+							// recycle SurfaceView
+							viewQueue.offer(viewMap.get(idHash));
+						}
+					}
+				}
+			});
+			Log.i(TAG, "Retrieving SurfaceView...");
+			SurfaceView view = viewQueue.poll();
+			Log.i(TAG, "Get!");
+			VideoPlayer player = new VideoPlayer(receiver, view);
+			streamMap.put(idHash, player);
+			viewMap.put(idHash, view);
+			player.start();
+			Log.i(TAG, "Player.start() called");	
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public synchronized void setSend(boolean enabled) {
@@ -113,9 +121,11 @@ public class AndroidVideoProxy {
 		
 		send = enabled;
 		if (enabled) {	// start streaming
+			wakeLock.acquire();
 			try {
 				BAPacketSenderSocketAdapter sender = new BAPacketSenderSocketAdapter(wrapper, classifier, item);
-				recorder = new AndroidVideoRecorder(sender);
+				Log.i(TAG, "Starting video recorder...");
+				recorder = new VideoRecorder(sender, views[views.length-1]);
 				recorder.start();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -129,7 +139,7 @@ public class AndroidVideoProxy {
 				recorder.release();
 				recorder = null;
 			}
-			// TODO: release wakelock
+			wakeLock.release();
 		}
 	}
 	
@@ -140,28 +150,28 @@ public class AndroidVideoProxy {
 		
 		receive = enabled;
 		if (enabled) {
-			// TODO: acquire wakelock
+			wakeLock.acquire();
 			Log.i(TAG, "Registering control queue with prefix: " + scope.getIdHex());
 			classifier.registerControlQueue(scope.getFullId(), eventHandler);
 			wrapper.subscribeScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
 		} else {
-			wrapper.unpublishScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
+			wrapper.unsubscribeScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
 			Log.i(TAG, "Unregistering control queue with prefix: " + scope.getIdHex());
 			classifier.unregisterControlQueue(scope.getFullId());
-			AndroidVideoPlayer[] playerList = null;
+			VideoPlayer[] playerList = null;
 			synchronized(streamMap) {
-				playerList = new AndroidVideoPlayer[streamMap.size()];
+				playerList = new VideoPlayer[streamMap.size()];
 				if (streamMap.size() > 0) {
 					streamMap.values().toArray(playerList);
 				}
 			}
 			
-			for (AndroidVideoPlayer player : playerList) {
+			for (VideoPlayer player : playerList) {
 				Log.i(TAG, "Terminating player " + BAHelper.byteToHex(player.getReceiver().getRid()) + "...");
 				player.release();
 				
 			}
-			// TODO: release wakelock
+			wakeLock.release();
 		}
 	}
 	

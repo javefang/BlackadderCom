@@ -29,6 +29,7 @@ public class BAPacketReceiver {
 		// register queue to wrapper
 		classifier.registerDataQueue(rid, dataQueue);
 		// from this point all events will be placed in the dataQueue
+		Log.i(TAG, "BAPacketReceiver initialised!");
 	}
 	
 	public BlockingQueue<BAEvent> getDataQueue() {

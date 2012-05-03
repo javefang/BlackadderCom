@@ -21,7 +21,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAItem;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAScope;
 
-public class AndroidVoiceProxy {
+public class VoiceProxy {
 	public static enum VoiceCodec {PCM, SPEEX};
 	public static final String TAG = "AndroidVoiceProxy";
 	public static final byte STRATEGY = Strategy.DOMAIN_LOCAL;
@@ -41,8 +41,8 @@ public class AndroidVoiceProxy {
 	//private BAPacketSender sender;
 	private WakeLock wakeLock;
 	
-	private AndroidVoiceRecorder recorder;
-	private HashMap<Integer, AndroidVoicePlayer> streamMap;
+	private VoiceRecorder recorder;
+	private HashMap<Integer, VoicePlayer> streamMap;
 	
 	private int bufSize;
 
@@ -50,7 +50,7 @@ public class AndroidVoiceProxy {
 	private boolean receive;
 	private boolean released;
 	
-	public AndroidVoiceProxy(Node node) {
+	public VoiceProxy(Node node) {
 		this.wrapper = node.getWrapper();
 		this.classifier = node.getClassifier();
 		this.wakeLock = node.getWakeLock();
@@ -77,7 +77,7 @@ public class AndroidVoiceProxy {
 								}
 							}
 						});
-						AndroidVoicePlayer player = new AndroidVoicePlayer(receiver, codec);
+						VoicePlayer player = new VoicePlayer(receiver, codec);
 						streamMap.put(idHash, player);
 						player.start();
 					}		
@@ -87,7 +87,7 @@ public class AndroidVoiceProxy {
 		};
 		
 		wrapper.publishScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
-		streamMap = new HashMap<Integer, AndroidVoicePlayer>();
+		streamMap = new HashMap<Integer, VoicePlayer>();
 	}
 	
 	public synchronized void setSend(boolean enabled) {
@@ -99,7 +99,7 @@ public class AndroidVoiceProxy {
 		if (enabled) {	// start streaming
 			wakeLock.acquire();
 			BAPacketSender sender = new BAPacketSender(wrapper, classifier, item);
-			recorder = new AndroidVoiceRecorder(sender, BAWrapperShared.DEFAULT_PKT_SIZE, codec);
+			recorder = new VoiceRecorder(sender, BAWrapperShared.DEFAULT_PKT_SIZE, codec);
 			recorder.start();
 		} else {	// stop streaming
 			if (recorder != null) {
@@ -152,14 +152,14 @@ public class AndroidVoiceProxy {
 			classifier.unregisterControlQueue(scope.getFullId());
 			
 			// 3. terminate all active player
-			AndroidVoicePlayer[] playerList = null;
+			VoicePlayer[] playerList = null;
 			synchronized(streamMap) {
-				playerList = new AndroidVoicePlayer[streamMap.size()];
+				playerList = new VoicePlayer[streamMap.size()];
 				if (streamMap.size() > 0) {
 					streamMap.values().toArray(playerList);
 				}
 			}
-			for (AndroidVoicePlayer player : playerList) {
+			for (VoicePlayer player : playerList) {
 				Log.i(TAG, "Terminating player " + BAHelper.byteToHex(player.getReceiver().getRid()) + "...");
 				player.release();
 				//cleanupThread(player);

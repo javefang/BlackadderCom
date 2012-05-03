@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import org.xiph.speex.SpeexEncoder;
 
-import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.AndroidVoiceProxy.VoiceCodec;
+import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 
 import android.media.AudioFormat;
@@ -13,7 +13,7 @@ import android.media.MediaRecorder;
 import android.os.Process;
 import android.util.Log;
 
-public class AndroidVoiceRecorder extends Thread {
+public class VoiceRecorder extends Thread {
 	public static final String TAG = "AndroidVoiceRecorder";
 	
 	/* AudioRecorder Settings */
@@ -45,7 +45,7 @@ public class AndroidVoiceRecorder extends Thread {
 	/* Speex Encoder Settings */
 	private SpeexEncoder encoder;
 	
-	public AndroidVoiceRecorder(BAPacketSender sender, int pktSizeByte, VoiceCodec codec) {
+	public VoiceRecorder(BAPacketSender sender, int pktSizeByte, VoiceCodec codec) {
 		Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 		released = false;
 		this.sender = sender;

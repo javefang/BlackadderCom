@@ -1,74 +1,166 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<AbsoluteLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/AbsoluteLayout1"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="vertical" >
+    android:layout_height="fill_parent">
+    
+    <LinearLayout 
+	    android:id="@+id/LinearLayout1"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent"
+	    android:orientation="vertical" >
 
-    <LinearLayout
+	    <LinearLayout
+	   		android:layout_width="match_parent"
+	   		android:layout_height="147dp" >
+	
+	        <SurfaceView
+	            android:id="@+id/video1"
+	            android:layout_width="0px"
+	            android:layout_height="fill_parent"
+	            android:layout_weight="0.5" />
+	
+	        <SurfaceView
+	            android:id="@+id/video2"
+	            android:layout_width="0px"
+	            android:layout_height="fill_parent"
+	            android:layout_weight="0.5" />
+	
+	    </LinearLayout>
+	
+	    <LinearLayout
+	        android:layout_width="match_parent"
+	        android:layout_height="147dp" >
+	
+	        <SurfaceView
+	            android:id="@+id/video3"
+	            android:layout_width="0px"
+	            android:layout_height="fill_parent"
+	            android:layout_weight="0.5" />
+	
+	        <SurfaceView
+	            android:id="@+id/video4"
+	            android:layout_width="0px"
+	            android:layout_height="fill_parent"
+	            android:layout_weight="0.5" />
+	
+	    </LinearLayout>
+	
+	</LinearLayout>
+
+    <SlidingDrawer
+        android:id="@+id/slidingDrawer1"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:layout_margin="10dp">
-
-        <EditText
-            android:id="@+id/clientIdInput"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ems="10"
-            android:hint="@string/clientIdHint"
-            android:maxLength="16" />
+        android:layout_height="match_parent"
+        android:content="@+id/content"
+        android:handle="@+id/handle" android:background="@null">
 
         <Button
-            android:id="@+id/btn_init"
+            android:id="@+id/handle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/init" />
+            android:text="Switch" />
 
-    </LinearLayout>
+        <LinearLayout
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical" >
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:layout_margin="10dp">
-
-        <ToggleButton
-            android:id="@+id/tb_send"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:text="@string/sendVoice"
-            android:textOff="@string/sendVoice"
-            android:textOn="@string/sendVoice" />
-
-        <ToggleButton
-            android:id="@+id/tb_recv"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:text="@string/receiveVoice"
-            android:textOff="@string/receiveVoice"
-            android:textOn="@string/receiveVoice" />
-
-        <RadioGroup
-            android:id="@+id/rg_codec"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal" >
-
-            <RadioButton
-                android:id="@+id/rb_pcm"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/audioCtrl"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/codec_pcm" />
+                android:paddingBottom="10dp" >
 
-            <RadioButton
-                android:id="@+id/rb_speex"
+                <ToggleButton
+                    android:id="@+id/tb_send"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sendVoice"
+                    android:textOff="@string/sendVoice"
+                    android:textOn="@string/sendVoice" />
+
+                <ToggleButton
+                    android:id="@+id/tb_recv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/receiveVoice"
+                    android:textOff="@string/receiveVoice"
+                    android:textOn="@string/receiveVoice" />
+
+                <RadioGroup
+                    android:id="@+id/rg_codec"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" >
+
+                    <RadioButton
+                        android:id="@+id/rb_pcm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/codec_pcm" />
+
+                    <RadioButton
+                        android:id="@+id/rb_speex"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/codec_speex" />
+                </RadioGroup>
+
+                <ImageButton
+                    android:id="@+id/btn_ptt"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/mic" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/videoCtrl"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/codec_speex" />
-        </RadioGroup>
+                android:layout_height="wrap_content" >
 
-    </LinearLayout>
+                <ToggleButton
+                    android:id="@+id/tb_sendVideo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sendVideo"
+                    android:textOff="@string/sendVideo"
+                    android:textOn="@string/sendVideo" />
 
-    <ImageButton
-        android:id="@+id/btn_ptt"
-        android:layout_width="match_parent"
-        android:layout_height="70dp"
-        android:src="@drawable/mic" />
-</LinearLayout>
+                <ToggleButton
+                    android:id="@+id/tb_recvVideo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/recvVideo"
+                    android:textOff="@string/recvVideo"
+                    android:textOn="@string/recvVideo" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/nodeCtrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+
+                <EditText
+                    android:id="@+id/clientIdInput"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ems="10"
+                    android:hint="@string/clientIdHint"
+                    android:maxLength="16" />
+
+                <Button
+                    android:id="@+id/btn_init"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/init" />
+            </LinearLayout>
+        </LinearLayout>
+    </SlidingDrawer>
+    
+</AbsoluteLayout>
+

@@ -97,7 +97,6 @@ public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
 		dataTransportThread.start();
 	}
 	
-	@Deprecated
 	public InputStream getInputStream() throws IOException {
 		return recvSocket.getInputStream();
 	}

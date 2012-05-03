@@ -76,6 +76,9 @@ public class BAPacketSenderSocketAdapter extends BAPacketSender {
 				int read;
 				while (length > 0) {
 					read = inputStream.read(data, off, length);
+					if (read == -1) {
+						return;
+					}
 					length -= read;
 					off += read;
 				}
@@ -84,7 +87,6 @@ public class BAPacketSenderSocketAdapter extends BAPacketSender {
 		dataTransportThread.start();
 	}
 	
-	@Deprecated
 	public OutputStream getOutputStream() throws IOException {
 		return sendSocket.getOutputStream();
 	}
@@ -93,7 +95,7 @@ public class BAPacketSenderSocketAdapter extends BAPacketSender {
 		if (!released) {
 			return sendSocket.getFileDescriptor();
 		} else {
-			return null;
+			throw new IllegalStateException();
 		}
 	}
 	

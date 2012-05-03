@@ -5,7 +5,7 @@ import java.util.concurrent.BlockingQueue;
 
 import org.xiph.speex.SpeexDecoder;
 
-import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.AndroidVoiceProxy.VoiceCodec;
+import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiver;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAEvent;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
@@ -17,7 +17,7 @@ import android.media.AudioTrack;
 import android.os.Process;
 import android.util.Log;
 
-public class AndroidVoicePlayer extends Thread {
+public class VoicePlayer extends Thread {
 	public static final String TAG = "AndroidVoicePlayer";
 	public static final int STREAM_TYPE = AudioManager.STREAM_MUSIC;
 	public static final int SAMPLE_RATE = 22050;
@@ -44,7 +44,7 @@ public class AndroidVoicePlayer extends Thread {
 	
 	//private int hashId; // used for identifying player
 	
-	public AndroidVoicePlayer(BAPacketReceiver receiver, VoiceCodec codec) {
+	public VoicePlayer(BAPacketReceiver receiver, VoiceCodec codec) {
 		Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 		this.receiver = receiver;
 		this.recvQueue = receiver.getDataQueue();

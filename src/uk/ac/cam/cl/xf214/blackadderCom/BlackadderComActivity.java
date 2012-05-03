@@ -1,9 +1,9 @@
 package uk.ac.cam.cl.xf214.blackadderCom;
 
 import uk.ac.cam.cl.xf214.DebugTool.LocalDebugger;
-import uk.ac.cam.cl.xf214.blackadderCom.androidVideo.AndroidVideoProxy;
-import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.AndroidVoiceProxy;
-import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.AndroidVoiceProxy.VoiceCodec;
+import uk.ac.cam.cl.xf214.blackadderCom.androidVideo.VideoProxy;
+import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy;
+import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAWrapperShared;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAObject;
@@ -13,7 +13,10 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnErrorListener;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.support.v4.view.ViewPager.LayoutParams;
@@ -38,18 +41,31 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import android.widget.VideoView;
 
 public class BlackadderComActivity extends Activity {
 	public static final String TAG = "BlackadderComActivity";
 	public static final String DEFAULT_ROOM_ID = "0000000000000000";
 	
+	static {
+		loadJNILibraries();
+	}
+	
 	private SurfaceView[] views;
 	
 	private Node node;
-	private AndroidVoiceProxy voiceProxy;
-	private AndroidVideoProxy videoProxy;
+	private VoiceProxy voiceProxy;
+	private VideoProxy videoProxy;
 	private WakeLock wakeLock;
 	//private boolean finished;
+	private EditText userIdInput;
+	private Button btnInit;
+	private ToggleButton tbSend;
+	private ToggleButton tbRecv;
+	private RadioGroup codecSelect;
+	private ImageButton btnPTT;
+	private ToggleButton tbSendVideo;
+	private ToggleButton tbRecvVideo;
 	
     /** Called when the activity is first created. */
     @Override
@@ -59,10 +75,19 @@ public class BlackadderComActivity extends Activity {
         LocalDebugger.setDebugger(new AndroidDebugger());	// set debugger
         int pid= android.os.Process.myPid();
         Log.i(TAG, "onCreate() pid=" + pid);
-        setContentView(R.layout.main);
-        loadJNILibraries();
+        setContentView(R.layout.main_landscape);
         initVoiceUI(); 
         initVideoUI();
+        setUIEnabled(btnInit, false);
+        
+        //runTest();
+    }
+    
+    private void runTest() {
+    	VideoView vv = (VideoView)views[0];
+    	vv.setVideoURI(Uri.parse("rtsp://192.168.1.102:8086/"));
+    	vv.start();
+    	
     }
     
     private boolean connect(String roomIdHex, String clientIdHex) {
@@ -73,29 +98,84 @@ public class BlackadderComActivity extends Activity {
         	wakeLock = powMan.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "BlackadderComWL");
         	wakeLock.setReferenceCounted(true);
         	node = new Node(roomId, clientId, wakeLock);
-        	voiceProxy = new AndroidVoiceProxy(node);
-        	videoProxy = new AndroidVideoProxy(node, views);
+        	voiceProxy = new VoiceProxy(node);
+        	videoProxy = new VideoProxy(node, views);
+        	setUIEnabled(btnInit, true);
         	return true;
         } else {
         	Toast.makeText(getApplicationContext(), "Invalid user ID", Toast.LENGTH_SHORT);
         	return false;
         }
+       
+    }
+    
+    private void setUIEnabled(View v, final boolean enabled) {
+		// disable buttons
+    	v.post(new Runnable() {
+    		public void run() {
+    			userIdInput.setEnabled(!enabled);
+	        	btnInit.setEnabled(!enabled);
+	        	tbSend.setEnabled(enabled);
+	        	tbRecv.setEnabled(enabled);
+	        	btnPTT.setEnabled(enabled);
+	        	
+	        	tbSendVideo.setEnabled(enabled);
+	        	tbRecvVideo.setEnabled(enabled);
+	        	
+	        	/* KEEP DISABLED */
+	        	for(int i = 0; i < codecSelect.getChildCount(); i++){
+	        	    ((RadioButton)codecSelect.getChildAt(i)).setEnabled(false);
+	        	}
+    		}
+    	});
     }
     
     
     private void initVideoUI() {
     	views = new SurfaceView[4];
-    	int[] viewId = {R.id.view1, R.id.view2, R.id.view3, R.id.view4};
+    	int[] viewId = {R.id.video1, R.id.video2, R.id.video3, R.id.video4};
     	for (int i = 0; i < 4; i++) {
     		views[i] = (SurfaceView)findViewById(viewId[i]);
-    		views[i].getHolder().addCallback(new Callback() {
+    		SurfaceHolder holder = views[i].getHolder();
+    		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+    		/*
+    		
+    		final MediaPlayer mp = new MediaPlayer();
+    		holder.addCallback(new Callback() {
 				public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
 				public void surfaceDestroyed(SurfaceHolder holder) {}
 				public void surfaceCreated(SurfaceHolder holder) {
-					holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+					Log.i(TAG, "initVideoUI(): surfaceCreated()");
+					mp.reset();
+		    		try {
+		    			mp.setDataSource("/sdcard/media/sample.mp4");
+		    			mp.setDisplay(holder);
+		    			mp.prepare();
+		    			mp.start();
+					} catch (Exception e) {
+						Log.e(TAG, "ERROR init video: " + e);
+						e.printStackTrace();
+					}
 				}
-    		});
+    		});*/
     	}
+    	
+    	tbSendVideo = (ToggleButton)findViewById(R.id.tb_sendVideo);
+    	tbRecvVideo = (ToggleButton)findViewById(R.id.tb_recvVideo);
+    	
+    	tbSendVideo.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				videoProxy.setSend(isChecked);
+			}
+    	});
+    	
+    	tbRecvVideo.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				videoProxy.setReceive(isChecked);
+			}
+    	});
     	
     	
     	/*
@@ -138,21 +218,12 @@ public class BlackadderComActivity extends Activity {
     }
     
     private void initVoiceUI() {
-    	final EditText userIdInput = (EditText)findViewById(R.id.clientIdInput);
-    	final Button btnInit = (Button)findViewById(R.id.btn_init);
-    	final ToggleButton tbSend = (ToggleButton)findViewById(R.id.tb_send);
-    	final ToggleButton tbRecv = (ToggleButton)findViewById(R.id.tb_recv);
-    	final RadioGroup codecSelect = (RadioGroup)findViewById(R.id.rg_codec);
-    	final ImageButton btnPTT = (ImageButton)findViewById(R.id.btn_ptt);
-    	
-    	btnInit.setEnabled(false);
-    	tbSend.setEnabled(false);
-    	tbRecv.setEnabled(false);
-    	btnPTT.setEnabled(false);
-    	for(int i = 0; i < codecSelect.getChildCount(); i++){
-    	    ((RadioButton)codecSelect.getChildAt(i)).setEnabled(false);
-    	}
-    	
+    	userIdInput = (EditText)findViewById(R.id.clientIdInput);
+    	btnInit = (Button)findViewById(R.id.btn_init);
+    	tbSend = (ToggleButton)findViewById(R.id.tb_send);
+    	tbRecv = (ToggleButton)findViewById(R.id.tb_recv);
+    	codecSelect = (RadioGroup)findViewById(R.id.rg_codec);
+    	btnPTT = (ImageButton)findViewById(R.id.btn_ptt);    	
     	
     	userIdInput.addTextChangedListener(new TextWatcher() {
 			public void afterTextChanged(Editable s) {
@@ -175,20 +246,6 @@ public class BlackadderComActivity extends Activity {
 					return;
 				}
 		        connect(DEFAULT_ROOM_ID, clientIdHex);
-		        
-		        // disable buttons
-	        	v.post(new Runnable() {
-	        		public void run() {
-	        			userIdInput.setEnabled(false);
-			        	btnInit.setEnabled(false);
-			        	tbSend.setEnabled(true);
-			        	tbRecv.setEnabled(true);
-			        	btnPTT.setEnabled(true);
-			        	for(int i = 0; i < codecSelect.getChildCount(); i++){
-			        	    ((RadioButton)codecSelect.getChildAt(i)).setEnabled(true);
-			        	}
-	        		}
-	        	});
 			}
     	});
     	
@@ -274,7 +331,7 @@ public class BlackadderComActivity extends Activity {
     	return clientIdStr;
     }
 	
-	private void loadJNILibraries() {
+	private static void loadJNILibraries() {
     	String sharedObjPath = "/data/data/uk.ac.cam.cl.xf214.blackadderCom/lib/";
 		System.load(sharedObjPath + "libgnustl_shared.so");
 		System.load(sharedObjPath + "libblackadder.so");

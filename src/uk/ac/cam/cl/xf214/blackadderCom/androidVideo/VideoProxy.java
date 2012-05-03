@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import de.mjpegsample.MjpegView;
+
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.SurfaceView;
@@ -36,7 +38,9 @@ public class VideoProxy {
 	private HashClassifierCallback classifier;
 	//private BAPacketSenderSocketAdapter sender;
 	private WakeLock wakeLock;
-	private SurfaceView[] views;
+	
+	private MjpegView[] views;
+	private SurfaceView monitor;
 	
 	private HashMap<Integer, VideoPlayer> streamMap;
 	private HashMap<Integer, SurfaceView> viewMap;
@@ -48,15 +52,17 @@ public class VideoProxy {
 	private boolean receive;
 	private boolean released;
 	
-	public VideoProxy(Node node, SurfaceView[] views) {
+	public VideoProxy(Node node, MjpegView[] views, SurfaceView monitor) {
+		this.released = false;
 		this.wrapper = node.getWrapper();
 		this.classifier = node.getClassifier();
 		this.views = views;
+		this.monitor = monitor;
 		this.wakeLock = node.getWakeLock();
 		this.clientId = node.getClientId();
 		
 		this.viewQueue = new LinkedList<SurfaceView>();
-		for (int i = 0; i < views.length - 1; i++) {
+		for (int i = 0; i < views.length; i++) {
 			viewQueue.add(views[i]);
 		}
 		
@@ -125,7 +131,7 @@ public class VideoProxy {
 			try {
 				BAPacketSenderSocketAdapter sender = new BAPacketSenderSocketAdapter(wrapper, classifier, item);
 				Log.i(TAG, "Starting video recorder...");
-				recorder = new VideoRecorder(sender, views[views.length-1]);
+				recorder = new VideoRecorder(sender, monitor);
 				recorder.start();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

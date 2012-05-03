@@ -29,7 +29,7 @@ public class VideoRecorder extends Thread {
 	private SurfaceHolder mSurfaceHolder;
 	private Callback callback;
 	private boolean released;
-	private boolean recording;
+	//private boolean recording;
 	
 	// default video parameters
 	private int mHeight = 144;
@@ -43,29 +43,33 @@ public class VideoRecorder extends Thread {
 	}
 	
 	private boolean initVideo() throws IOException {
-		recording = true;
+		Log.i(TAG, "initVideo() called");
+		//recording = true;
 		if (mSurfaceHolder == null) {
 			Log.i(TAG, "ERROR: cannot init video, surface is null!");
 			return false;
 		}
-		/*
+		
 		if (mMediaRecorder == null) {
 			mMediaRecorder = new MediaRecorder();
 		} else {
 			mMediaRecorder.reset();
-		}*/
+		}
 		
 		// release camera first if previously opened
 		releaseCamera();
 		
 		// init camera
+		Log.i(TAG, "Initialising camera...");
 		mCamera = Camera.open();
-		mCamera.unlock();
+		//mCamera.unlock();
 		Camera.Parameters camParams = mCamera.getParameters();
-		camParams.setPreviewFormat(ImageFormat.YV12);
-		camParams.setPreviewFpsRange(5, 20);
+		camParams.setPreviewFormat(ImageFormat.NV21);
+		camParams.setPreviewFpsRange(15, 25);
 		camParams.setPreviewSize(mWidth, mHeight);
 		mCamera.setParameters(camParams);
+		
+		Log.i(TAG, "Setting preview display...");
 		mCamera.setPreviewDisplay(mSurfaceHolder);
 		mCamera.setPreviewCallback(new PreviewCallback() {
 			public void onPreviewFrame(byte[] data, Camera camera) {
@@ -79,13 +83,15 @@ public class VideoRecorder extends Thread {
 		});
 		
 		// start capturing video frames (frame data will be push to MjpegOutputStream)
+		Log.i(TAG, "Starting preview...");
 		mCamera.startPreview();
+		Log.i(TAG, "Preview started!");
 		
 		/*
 		mMediaRecorder.setCamera(mCamera);
 		mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
         mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-		mMediaRecorder.setOutputFile(sender.getFileDescriptor());
+		mMediaRecorder.setOutputFile("/dev/null");
 		mMediaRecorder.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 		mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
 		mMediaRecorder.setPreviewDisplay(mSurfaceHolder.getSurface());
@@ -111,13 +117,14 @@ public class VideoRecorder extends Thread {
 			initVideo();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
+			Log.e(TAG, "IOException while initVideo(): " + e1.getMessage());
 			e1.printStackTrace();
 		}
 		this.callback = new Callback() {
 			public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 				Log.i(TAG, "surfaceChanged()");
 				try {
-					if (!recording) initVideo();
+					initVideo();
 				} catch (IOException e) {
 					release();
 					e.printStackTrace();
@@ -126,6 +133,7 @@ public class VideoRecorder extends Thread {
 			public void surfaceDestroyed(SurfaceHolder holder) {
 				Log.i(TAG, "surfaceDestroyed()");
 				mSurfaceHolder = null;
+				release();
 			}
 			public void surfaceCreated(SurfaceHolder holder) {
 				Log.i(TAG, "surfaceCreated()");
@@ -135,9 +143,11 @@ public class VideoRecorder extends Thread {
 		};
 		SurfaceHolder holder = preview.getHolder();
 		holder.addCallback(callback);
+		Log.i(TAG, "Surface callback set!");
 	}
 	
 	public synchronized void release() {
+		Log.i(TAG, "release()");
 		if (!released) {
 			released = true;
 			
@@ -150,6 +160,7 @@ public class VideoRecorder extends Thread {
 			}
 			*/
 			releaseCamera();
+			
 			try {
 				mjpegOutputStream.close();
 			} catch (IOException e) {
@@ -163,6 +174,8 @@ public class VideoRecorder extends Thread {
 				mSurfaceHolder.removeCallback(callback);
 			}
 			Log.i(TAG, "Video recorder released!");
+		} else {
+			Log.i(TAG, "already released(), ignoring...");
 		}
 	}
 	
@@ -170,6 +183,7 @@ public class VideoRecorder extends Thread {
 		if (mCamera != null) {
 			try {
 				mCamera.stopPreview();
+				mCamera.setPreviewCallback(null);
 				mCamera.reconnect();
 				mCamera.release();
 				mCamera = null;

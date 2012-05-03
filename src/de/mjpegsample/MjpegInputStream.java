@@ -10,6 +10,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.YuvImage;
 
 // STREAM FORMAT SPECIFICATION
 // xx xx xx xx (header, content-length, int)
@@ -50,11 +51,10 @@ public class MjpegInputStream extends DataInputStream {
     }
 
     private int parseContentLength(byte[] headerBytes) throws IOException, NumberFormatException {
-        return Integer.parseInt(BAHelper.byteToHex(headerBytes));
+        return Integer.parseInt(BAHelper.byteToText(headerBytes));
     }   
 
     public Bitmap readMjpegFrame() throws IOException {
-    	
         mark(FRAME_MAX_LENGTH);
         int headerLen = getStartOfSequence(this, SOI_MARKER);
         reset();

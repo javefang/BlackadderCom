@@ -14,13 +14,13 @@
 	   		android:layout_width="match_parent"
 	   		android:layout_height="147dp" >
 	
-	        <SurfaceView
+	        <de.mjpegsample.MjpegView
 	            android:id="@+id/video1"
 	            android:layout_width="0px"
 	            android:layout_height="fill_parent"
 	            android:layout_weight="0.5" />
 	
-	        <SurfaceView
+	        <de.mjpegsample.MjpegView
 	            android:id="@+id/video2"
 	            android:layout_width="0px"
 	            android:layout_height="fill_parent"
@@ -32,14 +32,14 @@
 	        android:layout_width="match_parent"
 	        android:layout_height="147dp" >
 	
-	        <SurfaceView
+	        <de.mjpegsample.MjpegView
 	            android:id="@+id/video3"
 	            android:layout_width="0px"
 	            android:layout_height="fill_parent"
 	            android:layout_weight="0.5" />
 	
 	        <SurfaceView
-	            android:id="@+id/video4"
+	            android:id="@+id/monitor"
 	            android:layout_width="0px"
 	            android:layout_height="fill_parent"
 	            android:layout_weight="0.5" />

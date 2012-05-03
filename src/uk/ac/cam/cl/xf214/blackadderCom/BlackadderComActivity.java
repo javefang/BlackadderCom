@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.xf214.blackadderCom;
 
+import de.mjpegsample.MjpegView;
 import uk.ac.cam.cl.xf214.DebugTool.LocalDebugger;
 import uk.ac.cam.cl.xf214.blackadderCom.androidVideo.VideoProxy;
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy;
@@ -51,7 +52,8 @@ public class BlackadderComActivity extends Activity {
 		loadJNILibraries();
 	}
 	
-	private SurfaceView[] views;
+	private MjpegView[] views;
+	private SurfaceView monitor;
 	
 	private Node node;
 	private VoiceProxy voiceProxy;
@@ -83,13 +85,6 @@ public class BlackadderComActivity extends Activity {
         //runTest();
     }
     
-    private void runTest() {
-    	VideoView vv = (VideoView)views[0];
-    	vv.setVideoURI(Uri.parse("rtsp://192.168.1.102:8086/"));
-    	vv.start();
-    	
-    }
-    
     private boolean connect(String roomIdHex, String clientIdHex) {
     	byte[] roomId = BAHelper.hexToByte(roomIdHex);
     	byte[] clientId = BAHelper.hexToByte(clientIdHex);
@@ -99,7 +94,7 @@ public class BlackadderComActivity extends Activity {
         	wakeLock.setReferenceCounted(true);
         	node = new Node(roomId, clientId, wakeLock);
         	voiceProxy = new VoiceProxy(node);
-        	videoProxy = new VideoProxy(node, views);
+        	videoProxy = new VideoProxy(node, views, monitor);
         	setUIEnabled(btnInit, true);
         	return true;
         } else {
@@ -132,12 +127,11 @@ public class BlackadderComActivity extends Activity {
     
     
     private void initVideoUI() {
-    	views = new SurfaceView[4];
-    	int[] viewId = {R.id.video1, R.id.video2, R.id.video3, R.id.video4};
-    	for (int i = 0; i < 4; i++) {
-    		views[i] = (SurfaceView)findViewById(viewId[i]);
+    	views = new MjpegView[3];
+    	int[] viewId = {R.id.video1, R.id.video2, R.id.video3};
+    	for (int i = 0; i < views.length; i++) {	
+    		views[i] = (MjpegView)findViewById(viewId[i]);
     		SurfaceHolder holder = views[i].getHolder();
-    		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     		/*
     		
     		final MediaPlayer mp = new MediaPlayer();
@@ -159,6 +153,9 @@ public class BlackadderComActivity extends Activity {
 				}
     		});*/
     	}
+    	
+    	monitor = (SurfaceView)findViewById(R.id.monitor);
+    	monitor.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);// only the last one is set as PUSH_BUFFERS 
     	
     	tbSendVideo = (ToggleButton)findViewById(R.id.tb_sendVideo);
     	tbRecvVideo = (ToggleButton)findViewById(R.id.tb_recvVideo);
@@ -301,6 +298,9 @@ public class BlackadderComActivity extends Activity {
 		Log.i(TAG, "onDestroy()");
 		if (voiceProxy != null) {
 			voiceProxy.release();
+		}
+		if (videoProxy != null) {
+			videoProxy.release();
 		}
 		if (node != null) {
 			node.release();

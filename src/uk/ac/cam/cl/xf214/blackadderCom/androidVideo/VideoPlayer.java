@@ -1,78 +1,83 @@
 package uk.ac.cam.cl.xf214.blackadderCom.androidVideo;
 
-import android.media.AudioManager;
-import android.media.MediaPlayer;
+import java.io.IOException;
+
+import de.mjpegsample.MjpegInputStream;
+import de.mjpegsample.MjpegView;
 import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.SurfaceHolder.Callback;
-import android.view.SurfaceView;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiverSocketAdapter;
 
-public class VideoPlayer extends Thread {
+public class VideoPlayer {
 	public static final String TAG = "AndroidVideoPlayer";
 	public static final int RESYNC_THRESHOLD = 10;	// player will resync when queue has 10 unhandled event
 	
-	private BAPacketReceiverSocketAdapter receiver;
-	private MediaPlayer mPlayer;
-	private SurfaceView view;
-	private Callback callback;
+	private BAPacketReceiverSocketAdapter mReceiver;
+	private MjpegView mView;
 	private volatile boolean released;
 	
-	public VideoPlayer(BAPacketReceiverSocketAdapter receiver, SurfaceView view) {
-		this.receiver = receiver;
-		this.view = view;
-		this.callback = new Callback() {
-			public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
-			public void surfaceDestroyed(SurfaceHolder holder) {}
-			public void surfaceCreated(SurfaceHolder holder) {
-				Log.i(TAG, "surfaceCreated()");
-				mPlayer.setDisplay(holder);
-				
-				try {
-					mPlayer.prepare();
-					mPlayer.start();
-					Log.i(TAG, "MediaPlayer started");
-				} catch (Exception e) {
-					e.printStackTrace();
-					Log.e(TAG, "ERROR: Exception while preparing video player: " + e);
-					release();
-				}
-				
-			}
-		};
-		
+	public VideoPlayer(BAPacketReceiverSocketAdapter receiver) {
+		mReceiver = receiver;
 	}
 	
 	public BAPacketReceiverSocketAdapter getReceiver() {
-		return receiver;
+		return mReceiver;
 	}
 	
-	@Override
-	public void run() {
-		released = false;
-		mPlayer = new MediaPlayer();
-		try {
-			//mPlayer.setDataSource("rtsp://192.168.1.102:8086/");
-			mPlayer.setDataSource(receiver.getFileDescriptor());
-		} catch (Exception e) {
-			Log.e(TAG, "ERROR: Exception while setting FD: " + e);
-			e.printStackTrace();
-			release();
-			return;
+	public MjpegView setView(MjpegView view) {
+		// releasing old view first
+		MjpegView oldView = mView;
+		
+		if (oldView != null) {
+			Log.i(TAG, "Unassign old view: " + oldView);
+			oldView.stopPlayback();	// TODO: print info when stop playback (change in MjpegView)
+			mView = null;
+			// pause data receiving (destroy all incoming pkts)
+			mReceiver.setReceive(false);
 		}
-		view.getHolder().addCallback(callback);
-		Log.i(TAG, "MediaPlayer data source set");
+		
+		// assign new view
+		mView = view;
+		// start playback if the assigned view is not null
+		if (mView != null) {
+			Log.i(TAG, "Get view: " + mView);
+			released = false;
+			// create MJPEG input stream
+			MjpegInputStream mjpegInputStream;
+			try {
+				mjpegInputStream = new MjpegInputStream(mReceiver.getInputStream());
+			} catch (IOException e) {
+				// TODO: need to add error handling here
+				e.printStackTrace();
+				// reverting setView() : use old view
+				mView = oldView;
+				return view;
+			}
+			
+			// set source
+			mView.setSource(mjpegInputStream);
+			// resume data receiving (baPkt->Socket stream->MjpegInputStream->MJpegView)
+			
+			// settings
+			view.showFps(false);
+			view.setDisplayMode(MjpegView.SIZE_FULLSCREEN);
+			
+			// start playback
+			view.startPlayback();
+			mReceiver.setReceive(true);
+			Log.i(TAG, "startPlayback()");
+		}
+		
+		return oldView;
 	}
 	
 	public void release() {
 		if (!released) {
-			view.getHolder().removeCallback(callback);
 			released = true;
-			interrupt();
-			if (mPlayer != null) {
-				mPlayer.release();
+			mReceiver.release();
+			if (mView != null) {
+				mView.stopPlayback();
+				Log.i(TAG, "MjpegView stopped!");
 			}
-			receiver.release();
 		}
 	}
 }

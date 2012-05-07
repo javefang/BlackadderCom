@@ -11,6 +11,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.YuvImage;
+import android.util.Log;
 
 // STREAM FORMAT SPECIFICATION
 // xx xx xx xx (header, content-length, int)
@@ -19,6 +20,7 @@ import android.graphics.YuvImage;
 
 
 public class MjpegInputStream extends DataInputStream {
+	public static final String TAG = "MjpegInputStream";
     private final byte[] SOI_MARKER = { (byte) 0xFF, (byte) 0xD8 };
     private final byte[] EOF_MARKER = { (byte) 0xFF, (byte) 0xD9 };
     private final String CONTENT_LENGTH = "Content-Length";
@@ -55,8 +57,10 @@ public class MjpegInputStream extends DataInputStream {
     }   
 
     public Bitmap readMjpegFrame() throws IOException {
+        //Log.i(TAG, "readMjpegFrame() " + System.currentTimeMillis());
         mark(FRAME_MAX_LENGTH);
         int headerLen = getStartOfSequence(this, SOI_MARKER);
+        //Log.i(TAG, "Got header!");
         reset();
         byte[] header = new byte[headerLen];
         readFully(header);
@@ -64,12 +68,15 @@ public class MjpegInputStream extends DataInputStream {
             mContentLength = parseContentLength(header);
         } catch (NumberFormatException nfe) { 
         	// count the content length manually if the content-length in the header is broken
+        	Log.e(TAG, "readMjpegFrame(): NumberFormatException,, count content-length manually");
             mContentLength = getEndOfSeqeunce(this, EOF_MARKER); 
         }
         reset();
         byte[] frameData = new byte[mContentLength];
         skipBytes(headerLen);
         readFully(frameData);
-        return BitmapFactory.decodeStream(new ByteArrayInputStream(frameData));
+        Bitmap bitmap = BitmapFactory.decodeStream(new ByteArrayInputStream(frameData));
+        //Log.i(TAG, "Returning bitmap " + bitmap);
+        return bitmap;
     }
 }

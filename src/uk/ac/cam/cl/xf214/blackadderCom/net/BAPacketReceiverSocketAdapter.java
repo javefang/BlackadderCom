@@ -16,7 +16,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 
 
 public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
-	public static final String TAG = "BAPacketRecieverSocketAdapter";
+	public static final String TAG = "BAPacketReceiverSocketAdapter";
 	public static final String DEFAULT_SOCKET_NAME = "BAVideoReceiver";
 	public static final int RESYNC_THRESHOLD = 10;	// player will resync when queue has 10 unhandled event
 	
@@ -25,6 +25,7 @@ public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
 	private LocalSocket sendSocket;
 	private Thread dataTransportThread;
 	
+	private volatile boolean receive;
 	private volatile boolean released;
 	
 	public BAPacketReceiverSocketAdapter(HashClassifierCallback classifier,
@@ -50,11 +51,11 @@ public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
 
 			public void run() {
 				released = false;
+				receive = false;
 				BlockingQueue<BAEvent> dataQueue = getDataQueue();
 				byte[] buf;
 				BAEvent event = null;
 				try {
-					
 					outputStream = sendSocket.getOutputStream();
 					Log.i(TAG, "BA->Socket bridging loop start!");
 					while (!released) {
@@ -63,8 +64,10 @@ public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
 							Log.i(TAG, "Resync video");
 							drainDataQueue();
 						}
+						//Log.i(TAG, "waiting for BA_PKT...");
 						// get a data event from BA
 						event = dataQueue.take();
+						//Log.i(TAG, "got new BA_PKT");
 						if (event.getDataLength() == 0) {
 							Log.i(TAG, "FIN_PKT received: terminating video " + BAHelper.byteToHex(getRid()));
 							event.freeNativeBuffer();
@@ -72,9 +75,12 @@ public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
 							break;
 						}
 						// get the data buffer
-						buf = event.getData(0, event.getDataLength());
-						// write to output stream
-						outputStream.write(buf);
+						if (receive) {
+							buf = event.getData(0, event.getDataLength());
+							// write to output stream
+							//Log.i(TAG, "Writing BA_PKT to socket... size=" + buf.length);
+							outputStream.write(buf);
+						}
 						event.freeNativeBuffer();
 					}
 					event = null;
@@ -107,6 +113,12 @@ public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
 		} else {
 			return null;
 		}
+	}
+	
+	/* must call setReceive(true) to start receiving data */
+	public void setReceive(boolean receive) {
+		Log.i(TAG, "Set receive=" + receive);
+		this.receive = receive;
 	}
 	
 	public synchronized void release() {

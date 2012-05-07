@@ -11,23 +11,16 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAObject;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.media.MediaPlayer;
-import android.media.MediaPlayer.OnErrorListener;
-import android.net.Uri;
+import android.graphics.Canvas;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
-import android.support.v4.view.ViewPager.LayoutParams;
 import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
-import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -42,7 +35,6 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-import android.widget.VideoView;
 
 public class BlackadderComActivity extends Activity {
 	public static final String TAG = "BlackadderComActivity";
@@ -53,7 +45,7 @@ public class BlackadderComActivity extends Activity {
 	}
 	
 	private MjpegView[] views;
-	private SurfaceView monitor;
+	private SurfaceView preview;
 	
 	private Node node;
 	private VoiceProxy voiceProxy;
@@ -94,7 +86,7 @@ public class BlackadderComActivity extends Activity {
         	wakeLock.setReferenceCounted(true);
         	node = new Node(roomId, clientId, wakeLock);
         	voiceProxy = new VoiceProxy(node);
-        	videoProxy = new VideoProxy(node, views, monitor);
+        	videoProxy = new VideoProxy(node, views, preview);
         	setUIEnabled(btnInit, true);
         	return true;
         } else {
@@ -129,33 +121,15 @@ public class BlackadderComActivity extends Activity {
     private void initVideoUI() {
     	views = new MjpegView[3];
     	int[] viewId = {R.id.video1, R.id.video2, R.id.video3};
+    	
     	for (int i = 0; i < views.length; i++) {	
     		views[i] = (MjpegView)findViewById(viewId[i]);
     		SurfaceHolder holder = views[i].getHolder();
-    		/*
-    		
-    		final MediaPlayer mp = new MediaPlayer();
-    		holder.addCallback(new Callback() {
-				public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
-				public void surfaceDestroyed(SurfaceHolder holder) {}
-				public void surfaceCreated(SurfaceHolder holder) {
-					Log.i(TAG, "initVideoUI(): surfaceCreated()");
-					mp.reset();
-		    		try {
-		    			mp.setDataSource("/sdcard/media/sample.mp4");
-		    			mp.setDisplay(holder);
-		    			mp.prepare();
-		    			mp.start();
-					} catch (Exception e) {
-						Log.e(TAG, "ERROR init video: " + e);
-						e.printStackTrace();
-					}
-				}
-    		});*/
     	}
     	
-    	monitor = (SurfaceView)findViewById(R.id.monitor);
-    	monitor.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);// only the last one is set as PUSH_BUFFERS 
+    	preview = (SurfaceView)findViewById(R.id.preview);
+    	preview.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);// only the last one is set as PUSH_BUFFERS 
+    	preview.setZOrderMediaOverlay(true);
     	
     	tbSendVideo = (ToggleButton)findViewById(R.id.tb_sendVideo);
     	tbRecvVideo = (ToggleButton)findViewById(R.id.tb_recvVideo);
@@ -173,45 +147,6 @@ public class BlackadderComActivity extends Activity {
 				videoProxy.setReceive(isChecked);
 			}
     	});
-    	
-    	
-    	/*
-    	for (int i = 0; i < views.length; i++) {
-    		final SurfaceView sv = views[i];
-    		Log.i(TAG, "Starting video " + i);
-    		views[i].getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-    		views[i].getHolder().addCallback(new Callback() {
-				@Override
-				public void surfaceChanged(SurfaceHolder holder, int format,
-						int width, int height) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void surfaceCreated(SurfaceHolder holder) {
-					MediaPlayer mp = new MediaPlayer();
-	    			try {
-						mp.setDataSource("/sdcard/media/sample.mp4");
-						mp.setDisplay(holder);
-		    			mp.prepare();
-		    			mp.start();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-
-				@Override
-				public void surfaceDestroyed(SurfaceHolder holder) {
-					// TODO Auto-generated method stub
-					
-				}
-    			
-    		});
-    	}
-    	*/
-    	
-    	
     }
     
     private void initVoiceUI() {

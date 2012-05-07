@@ -1,59 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<AbsoluteLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/AbsoluteLayout1"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/RelativeLayout1"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
-    
-    <LinearLayout 
-	    android:id="@+id/LinearLayout1"
-	    android:layout_width="fill_parent"
-	    android:layout_height="fill_parent"
-	    android:orientation="vertical" >
+    android:layout_height="fill_parent" >
 
-	    <LinearLayout
-	   		android:layout_width="match_parent"
-	   		android:layout_height="147dp" >
-	
-	        <de.mjpegsample.MjpegView
-	            android:id="@+id/video1"
-	            android:layout_width="0px"
-	            android:layout_height="fill_parent"
-	            android:layout_weight="0.5" />
-	
-	        <de.mjpegsample.MjpegView
-	            android:id="@+id/video2"
-	            android:layout_width="0px"
-	            android:layout_height="fill_parent"
-	            android:layout_weight="0.5" />
-	
-	    </LinearLayout>
-	
-	    <LinearLayout
-	        android:layout_width="match_parent"
-	        android:layout_height="147dp" >
-	
-	        <de.mjpegsample.MjpegView
-	            android:id="@+id/video3"
-	            android:layout_width="0px"
-	            android:layout_height="fill_parent"
-	            android:layout_weight="0.5" />
-	
-	        <SurfaceView
-	            android:id="@+id/monitor"
-	            android:layout_width="0px"
-	            android:layout_height="fill_parent"
-	            android:layout_weight="0.5" />
-	
-	    </LinearLayout>
-	
-	</LinearLayout>
+    <de.mjpegsample.MjpegView
+        android:id="@+id/video1"
+        android:layout_width="267dp"
+        android:layout_height="147dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true" />
+
+     <de.mjpegsample.MjpegView
+        android:id="@+id/video2"
+        android:layout_width="267dp"
+        android:layout_height="147dp"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/video1" />
+    
+    <de.mjpegsample.MjpegView
+        android:id="@+id/video3"
+        android:layout_width="267dp"
+        android:layout_height="147dp"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/video1" />
+
+    <SurfaceView
+        android:id="@+id/preview"
+        android:layout_width="267dp"
+        android:layout_height="147dp"
+        android:layout_toRightOf="@+id/video3"
+        android:layout_below="@+id/video2" />
 
     <SlidingDrawer
         android:id="@+id/slidingDrawer1"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@null"
         android:content="@+id/content"
-        android:handle="@+id/handle" android:background="@null">
+        android:handle="@+id/handle" >
 
         <Button
             android:id="@+id/handle"
@@ -150,7 +135,10 @@
                     android:layout_weight="1"
                     android:ems="10"
                     android:hint="@string/clientIdHint"
-                    android:maxLength="16" />
+                    android:maxLength="16" >
+
+                    <requestFocus />
+                </EditText>
 
                 <Button
                     android:id="@+id/btn_init"
@@ -161,6 +149,5 @@
             </LinearLayout>
         </LinearLayout>
     </SlidingDrawer>
-    
-</AbsoluteLayout>
 
+</RelativeLayout>

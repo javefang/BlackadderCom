@@ -62,7 +62,7 @@ public class VoiceProxy {
 		this.eventHandler = new BAPushControlEventAdapter() {
 			@Override
 			public void newData(BAEvent event) {
-				int idHash = event.getId().hashCode();
+				int idHash = Arrays.hashCode(event.getId());	// TODO: fixing hashing behaviour (need revise)
 				synchronized(streamMap) {
 					if (!streamMap.containsKey(idHash)) {
 						Log.i(TAG, "Creating new stream " + BAHelper.byteToHex(event.getId()));

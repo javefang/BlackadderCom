@@ -7,10 +7,12 @@ import java.util.LinkedList;
 
 import de.mjpegsample.MjpegView;
 
+import android.os.Build;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.SurfaceView;
 import uk.ac.cam.cl.xf214.blackadderCom.Node;
+import uk.ac.cam.cl.xf214.blackadderCom.androidVideo.VideoRecorder.PreviewMode;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiverSocketAdapter;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSenderSocketAdapter;
 import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
@@ -39,42 +41,37 @@ public class VideoProxy {
 	//private BAPacketSenderSocketAdapter sender;
 	private WakeLock wakeLock;
 	
-	private MjpegView[] views;
-	private SurfaceView monitor;
-	
-	private HashMap<Integer, VideoPlayer> streamMap;
-	private HashMap<Integer, SurfaceView> viewMap;
-	private LinkedList<SurfaceView> viewQueue;
+	private HashMap<Integer, VideoPlayer> mStreamMap;
+	private FCFSViewScheduler mViewSched;
+	private SurfaceView preview;
 	
 	private VideoRecorder recorder;
+	
 	
 	private boolean send;
 	private boolean receive;
 	private boolean released;
 	
-	public VideoProxy(Node node, MjpegView[] views, SurfaceView monitor) {
+	public VideoProxy(Node node, MjpegView[] views, SurfaceView preview) {
 		this.released = false;
 		this.wrapper = node.getWrapper();
 		this.classifier = node.getClassifier();
-		this.views = views;
-		this.monitor = monitor;
+		this.mViewSched = new FCFSViewScheduler(views);
+		this.preview = preview;
 		this.wakeLock = node.getWakeLock();
 		this.clientId = node.getClientId();
-		
-		this.viewQueue = new LinkedList<SurfaceView>();
-		for (int i = 0; i < views.length; i++) {
-			viewQueue.add(views[i]);
-		}
+		mStreamMap = new HashMap<Integer, VideoPlayer>(); 
 		
 		// process scope id
 		this.scope = BAScope.createBAScope(VIDEO_SCOPE_ID, node.getRoomScope());
 		this.item = BAItem.createBAItem(clientId, scope);
+		
 		this.eventHandler = new BAPushControlEventAdapter() {
 			@Override
 			public void newData(BAEvent event) {
-				int idHash = event.getId().hashCode();
-				synchronized(streamMap) {
-					if (!streamMap.containsKey(idHash) && !viewQueue.isEmpty()) {
+				int idHash = Arrays.hashCode(event.getId());
+				synchronized(mStreamMap) {
+					if (!mStreamMap.containsKey(idHash)) {
 						// TODO: creating new stream
 						initiateStream(event.getId(), idHash);
 					}		
@@ -84,38 +81,43 @@ public class VideoProxy {
 		};
 		
 		wrapper.publishScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
-		streamMap = new HashMap<Integer, VideoPlayer>();
-		viewMap = new HashMap<Integer, SurfaceView>();
 	}
+	
 	
 	private void initiateStream(byte[] id, int idHash) {
 		Log.i(TAG, "Creating new stream " + BAHelper.byteToHex(id));
 		// create BAPacketReceiver and AndroidVoicePlayer
 		
 		try {
-			BAPacketReceiverSocketAdapter receiver = new BAPacketReceiverSocketAdapter(classifier, id, new StreamFinishedListener() {
+			StreamFinishedListener sfLis = new StreamFinishedListener() {
 				public void streamFinished(byte[] rid) {
+					Log.i(TAG, "StreamFinishedListener called");
 					int idHash = Arrays.hashCode(rid);
-					synchronized(streamMap) {
-						if (streamMap.containsKey(idHash)) {
+					//Log.i(TAG, "streamFinished(): Acquiring mutex on mStreamMap");
+					synchronized(mStreamMap) {
+						if (mStreamMap.containsKey(idHash)) {
 							// remove stream
-							streamMap.remove(idHash);
-							// recycle SurfaceView
-							viewQueue.offer(viewMap.get(idHash));
+							Log.i(TAG, "Removing stream from ViewScheduler and streamMap...");
+							VideoPlayer player = mStreamMap.get(idHash);
+							mViewSched.removeStream(player);
+							mStreamMap.remove(idHash);
 						}
 					}
+					//Log.i(TAG, "streamFinished(): mutex on mStreamMap released");
 				}
-			});
-			Log.i(TAG, "Retrieving SurfaceView...");
-			SurfaceView view = viewQueue.poll();
-			Log.i(TAG, "Get!");
-			VideoPlayer player = new VideoPlayer(receiver, view);
-			streamMap.put(idHash, player);
-			viewMap.put(idHash, view);
-			player.start();
-			Log.i(TAG, "Player.start() called");	
+			};
+			Log.i(TAG, "Creating BAPacketReceiverSocketAdapter...");
+			BAPacketReceiverSocketAdapter receiver = new BAPacketReceiverSocketAdapter(classifier, id, sfLis);
+			Log.i(TAG, "Creating VideoPlayer...");
+			VideoPlayer player = new VideoPlayer(receiver);
+			Log.i(TAG, "add to mStreamMap");
+			mStreamMap.put(idHash, player);
+			Log.i(TAG, "ViewScheduler addStream()");
+			mViewSched.addStream(player);
+			Log.i(TAG, "Stream initialized!");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			Log.e(TAG, "ERROR: IOException caught!");
 			e.printStackTrace();
 		}
 	}
@@ -131,7 +133,7 @@ public class VideoProxy {
 			try {
 				BAPacketSenderSocketAdapter sender = new BAPacketSenderSocketAdapter(wrapper, classifier, item);
 				Log.i(TAG, "Starting video recorder...");
-				recorder = new VideoRecorder(sender, monitor);
+				recorder = new VideoRecorder(sender, preview);
 				recorder.start();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -165,10 +167,10 @@ public class VideoProxy {
 			Log.i(TAG, "Unregistering control queue with prefix: " + scope.getIdHex());
 			classifier.unregisterControlQueue(scope.getFullId());
 			VideoPlayer[] playerList = null;
-			synchronized(streamMap) {
-				playerList = new VideoPlayer[streamMap.size()];
-				if (streamMap.size() > 0) {
-					streamMap.values().toArray(playerList);
+			synchronized(mStreamMap) {
+				playerList = new VideoPlayer[mStreamMap.size()];
+				if (mStreamMap.size() > 0) {
+					mStreamMap.values().toArray(playerList);
 				}
 			}
 			

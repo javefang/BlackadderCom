@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
@@ -32,16 +35,17 @@ public class MjpegOutputStream extends DataOutputStream {
 		this.mRect = new Rect(0, 0, mWidth, mHeight);
 	}
 	
-	public void addFrame(byte[] frameData) throws IOException {
+	public void addFrame(byte[] data, int length) throws IOException {
 		//Log.i(TAG, "Receicing frame size=" + frameData.length);
-		YuvImage yuvImage = new YuvImage(frameData, ImageFormat.NV21, mWidth, mHeight, null);
-		ByteArrayOutputStream mJpegOutput = new ByteArrayOutputStream(frameData.length);
+		YuvImage yuvImage = new YuvImage(data, ImageFormat.NV21, mWidth, mHeight, null);
+		ByteArrayOutputStream mJpegOutput = new ByteArrayOutputStream(length);
 		yuvImage.compressToJpeg(mRect, mQuality, mJpegOutput);
+		
 		// 1. write content length
 		//Log.i(TAG, "Content-length=" + mJpegOutput.size());
 		write(BAHelper.textToByte(mJpegOutput.size() + ""));
 		// 2. write jpeg data
-		write(mJpegOutput.toByteArray());
+		mJpegOutput.writeTo(this);
 		flush();
 	}
 	

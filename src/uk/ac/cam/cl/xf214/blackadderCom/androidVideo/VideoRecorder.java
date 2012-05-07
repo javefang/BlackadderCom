@@ -112,7 +112,7 @@ public class VideoRecorder extends Thread {
 		mCamera.setPreviewCallback(new PreviewCallback() {
 			public void onPreviewFrame(byte[] data, Camera camera) {
 				try {
-					Log.i(TAG, "onPreviewFrame() @ " + System.currentTimeMillis());
+					//Log.i(TAG, "onPreviewFrame() @ " + System.currentTimeMillis());
 					mjpegOutputStream.addFrame(data, data.length);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block

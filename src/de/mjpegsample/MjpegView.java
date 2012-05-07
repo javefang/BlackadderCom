@@ -40,9 +40,6 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 	private int dispWidth;
 	private int dispHeight;
 	private int displayMode;
-	
-	private SurfaceHolder mHolder;
-	private Context mContext;
 
 	private Paint noSignalPaint;
 	private String noSignalText;
@@ -120,17 +117,22 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 			String fps = "";
 			Log.i(TAG, "Starting playback...");
 			while (mRun) {
-				if (mPause) {
-					try {
-						drawNoSignal();
-						pauseWait.wait();
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-						break;
-					}
-				}
 				if (surfaceDone) {
+					if (mPause) {
+						try {
+							drawNoSignal();
+							synchronized(pauseWait) {
+								Log.i(TAG, "drawing thread paused");
+								pauseWait.wait();
+								Log.i(TAG, "drawing thread resumed!");
+							}
+							continue;
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+							break;
+						}
+					}
 					try {
 						c = mSurfaceHolder.lockCanvas();
 						synchronized (mSurfaceHolder) {
@@ -145,6 +147,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 								destRect = destRect(bm.getWidth(),
 										bm.getHeight());
 								c.drawColor(Color.BLACK);
+								Log.i(TAG, "Drawing frame... " + System.currentTimeMillis());
 								c.drawBitmap(bm, null, destRect, p);
 								if (showFps) {
 									p.setXfermode(mode);
@@ -170,7 +173,6 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 							} catch (IOException e) {
 								Log.e(TAG, "run(): IOException caught: " + e.getMessage());
 								pausePlayback();
-								break;
 							}
 						}
 					} finally {
@@ -185,10 +187,9 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 
 	private void init(Context context) {
 		pauseWait = new Object();
-		mHolder = getHolder();
-		mHolder.addCallback(this);
-		mContext = context;
-		thread = new MjpegViewThread(mHolder, context);	// call this on startPlayback()
+		SurfaceHolder holder = getHolder();
+		holder.addCallback(this);
+		thread = new MjpegViewThread(holder, context);	// call this on startPlayback()
 		setFocusable(true);
 		overlayPaint = new Paint();
 		overlayPaint.setTextAlign(Paint.Align.LEFT);
@@ -219,23 +220,30 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 			case TERMINATED:
 				throw new RuntimeException("MjpegView already stopped and destroyed!");
 			default:
-				Log.i(TAG, "Resuming playback!");
-				mPause = false;
-				pauseWait.notifyAll();
+				if (mPause) {
+					Log.i(TAG, "Resuming playback!");
+					mPause = false;
+					synchronized(pauseWait) {
+						pauseWait.notifyAll();
+					}
+				} else {
+					Log.i(TAG, "Already started");
+				}
 			}
 		}
 	}
 	
 	public void pausePlayback() {
-		mPause = true;
-		try {
-			mIn.close();
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			mIn = null;
+		if (mRun && !mPause) {
+			mPause = true;
+			try {
+				mIn.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
+		} else {
+			Log.i(TAG, "Not started or already paused");
 		}
 	}
 
@@ -246,7 +254,12 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 			boolean retry = true;
 			while (retry) {
 				try {
-					mIn.close();
+					if (mIn != null) {	
+						mIn.close();
+					}
+					synchronized(pauseWait) {
+						pauseWait.notify();
+					}
 				} catch (IOException ioe) {
 					Log.e(TAG, "stopPlayback(): IOException caught");
 				}

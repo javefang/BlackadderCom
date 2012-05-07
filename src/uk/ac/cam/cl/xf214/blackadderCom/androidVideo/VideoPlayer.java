@@ -29,7 +29,7 @@ public class VideoPlayer {
 		
 		if (oldView != null) {
 			Log.i(TAG, "Unassign old view: " + oldView);
-			oldView.stopPlayback();	// TODO: print info when stop playback (change in MjpegView)
+			oldView.pausePlayback();	// TODO: print info when stop playback (change in MjpegView)
 			mView = null;
 			// pause data receiving (destroy all incoming pkts)
 			mReceiver.setReceive(false);
@@ -75,9 +75,10 @@ public class VideoPlayer {
 			released = true;
 			mReceiver.release();
 			if (mView != null) {
-				mView.stopPlayback();
-				Log.i(TAG, "MjpegView stopped!");
+				mView.pausePlayback();
+				Log.i(TAG, "MjpegView paused!");
 			}
+			Log.i(TAG, "VideoPlayer released!");
 		}
 	}
 }

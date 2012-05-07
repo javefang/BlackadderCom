@@ -71,6 +71,13 @@ public class FCFSViewScheduler implements ViewScheduler {
 		initViewQueue();
 	}
 	
+	public synchronized void release() {
+		clear();
+		for (MjpegView m : mViews) {
+			m.stopPlayback();
+		}
+	}
+	
 	private void initViewQueue() {
 		for (MjpegView view : mViews) {
 			mViewQueue.offer(view);
@@ -82,8 +89,8 @@ public class FCFSViewScheduler implements ViewScheduler {
 		MjpegView oldView = player.setView(newView);
 		// recycle old view if not null
 		if (oldView != null) {
-			Log.i(TAG, "Recycling view " + oldView);
 			mViewQueue.offer(oldView);
+			Log.i(TAG, "Recycling view " + oldView);
 		}
 	}
 

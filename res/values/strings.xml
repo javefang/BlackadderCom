@@ -2,7 +2,7 @@
 <resources>
 
     <string name="hello">Hello World, BlackadderComActivity!</string>
-    <string name="app_name">BlackadderCom</string>
+    <string name="app_name">VOBA</string>
     <string name="clientIdHint">Enter client ID</string>
     <string name="receiveVoice">Receive Voice</string>
     <string name="sendVoice">Send Voice</string>

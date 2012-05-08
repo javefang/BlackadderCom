@@ -55,6 +55,8 @@ public class VoiceProxy {
 		this.classifier = node.getClassifier();
 		this.wakeLock = node.getWakeLock();
 		this.clientId = node.getClientId();
+		streamMap = new HashMap<Integer, VoicePlayer>();
+		
 		// process scope id
 		this.scope = BAScope.createBAScope(VOICE_SCOPE_ID, node.getRoomScope());
 		this.item = BAItem.createBAItem(clientId, scope);
@@ -65,21 +67,7 @@ public class VoiceProxy {
 				int idHash = Arrays.hashCode(event.getId());	// TODO: fixing hashing behaviour (need revise)
 				synchronized(streamMap) {
 					if (!streamMap.containsKey(idHash)) {
-						Log.i(TAG, "Creating new stream " + BAHelper.byteToHex(event.getId()));
-						// create BAPacketReceiver and AndroidVoicePlayer
-						BAPacketReceiver receiver = new BAPacketReceiver(classifier, event.getId(), new StreamFinishedListener() {
-							public void streamFinished(byte[] rid) {
-								int idHash = Arrays.hashCode(rid);
-								synchronized(streamMap) {
-									if (streamMap.containsKey(idHash)) {
-										streamMap.remove(idHash);
-									}
-								}
-							}
-						});
-						VoicePlayer player = new VoicePlayer(receiver, codec);
-						streamMap.put(idHash, player);
-						player.start();
+						initStream(event.getId(), idHash);
 					}		
 				}
 				event.freeNativeBuffer();
@@ -87,7 +75,25 @@ public class VoiceProxy {
 		};
 		
 		wrapper.publishScope(scope.getId(), scope.getPrefix(), STRATEGY, null);
-		streamMap = new HashMap<Integer, VoicePlayer>();
+	}
+	
+	private void initStream(byte[] id, int idHash) {
+		Log.i(TAG, "Creating new stream " + BAHelper.byteToHex(id));
+		// create BAPacketReceiver and AndroidVoicePlayer
+		StreamFinishedListener sfl = new StreamFinishedListener() {
+			public void streamFinished(byte[] rid) {
+				int idHash = Arrays.hashCode(rid);
+				synchronized(streamMap) {
+					if (streamMap.containsKey(idHash)) {
+						streamMap.remove(idHash);
+					}
+				}
+			}
+		};
+		BAPacketReceiver receiver = new BAPacketReceiver(classifier, id);
+		VoicePlayer player = new VoicePlayer(receiver, codec, sfl);
+		streamMap.put(idHash, player);
+		player.start();
 	}
 	
 	public synchronized void setSend(boolean enabled) {

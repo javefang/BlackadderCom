@@ -3,16 +3,14 @@ package uk.ac.cam.cl.xf214.blackadderCom.androidVideo;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 
 import de.mjpegsample.MjpegView;
 
-import android.os.Build;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.SurfaceView;
+
 import uk.ac.cam.cl.xf214.blackadderCom.Node;
-import uk.ac.cam.cl.xf214.blackadderCom.androidVideo.VideoRecorder.PreviewMode;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiverSocketAdapter;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSenderSocketAdapter;
 import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
@@ -66,14 +64,15 @@ public class VideoProxy {
 		this.scope = BAScope.createBAScope(VIDEO_SCOPE_ID, node.getRoomScope());
 		this.item = BAItem.createBAItem(clientId, scope);
 		
+		// controller to use when receiving new stream
 		this.eventHandler = new BAPushControlEventAdapter() {
 			@Override
 			public void newData(BAEvent event) {
 				int idHash = Arrays.hashCode(event.getId());
 				synchronized(mStreamMap) {
 					if (!mStreamMap.containsKey(idHash)) {
-						// TODO: creating new stream
-						initiateStream(event.getId(), idHash);
+						// creating new stream if not previously added
+						initStream(event.getId(), idHash);
 					}		
 				}
 				event.freeNativeBuffer();
@@ -84,7 +83,7 @@ public class VideoProxy {
 	}
 	
 	
-	private void initiateStream(byte[] id, int idHash) {
+	private void initStream(byte[] id, int idHash) {
 		Log.i(TAG, "Creating new stream " + BAHelper.byteToHex(id));
 		// create BAPacketReceiver and AndroidVoicePlayer
 		
@@ -107,9 +106,9 @@ public class VideoProxy {
 				}
 			};
 			Log.i(TAG, "Creating BAPacketReceiverSocketAdapter...");
-			BAPacketReceiverSocketAdapter receiver = new BAPacketReceiverSocketAdapter(classifier, id, sfLis);
+			BAPacketReceiverSocketAdapter receiver = new BAPacketReceiverSocketAdapter(classifier, id);
 			Log.i(TAG, "Creating VideoPlayer...");
-			VideoPlayer player = new VideoPlayer(receiver);
+			VideoPlayer player = new VideoPlayer(receiver, sfLis);
 			Log.i(TAG, "add to mStreamMap");
 			mStreamMap.put(idHash, player);
 			Log.i(TAG, "ViewScheduler addStream()");

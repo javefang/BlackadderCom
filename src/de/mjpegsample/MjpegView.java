@@ -29,6 +29,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 
 	private MjpegViewThread thread;
 	private MjpegInputStream mIn = null;
+	private OnErrorListener mOnErrorListener;
 	private boolean showFps = false;
 	private boolean mRun = false;
 	private boolean mPause = false;
@@ -120,12 +121,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 				if (surfaceDone) {
 					if (mPause) {
 						try {
-							drawNoSignal();
-							synchronized(pauseWait) {
-								Log.i(TAG, "drawing thread paused");
-								pauseWait.wait();
-								Log.i(TAG, "drawing thread resumed!");
-							}
+							doPause();
 							continue;
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
@@ -137,6 +133,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 						c = mSurfaceHolder.lockCanvas();
 						synchronized (mSurfaceHolder) {
 							try {
+								//Log.i(TAG, "Waiting on readMjpegFrame()..." + System.currentTimeMillis());
 								bm = mIn.readMjpegFrame();
 								if (bm == null) {
 									Log.i(TAG, "Invalid bitmap, skip to next loop");
@@ -147,7 +144,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 								destRect = destRect(bm.getWidth(),
 										bm.getHeight());
 								c.drawColor(Color.BLACK);
-								Log.i(TAG, "Drawing frame... " + System.currentTimeMillis());
+								//Log.i(TAG, "Drawing frame... " + System.currentTimeMillis());
 								c.drawBitmap(bm, null, destRect, p);
 								if (showFps) {
 									p.setXfermode(mode);
@@ -209,8 +206,8 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 		noSignalPaint.setColor(Color.WHITE);
 	}
 
-	public void startPlayback() {
-		if (mIn != null) {
+	public void startPlayback() throws RuntimeException {
+		if (mIn != null && mOnErrorListener != null) {
 			switch (thread.getState()) {
 			case NEW:
 				Log.i(TAG, "Starting new playback!");
@@ -230,20 +227,49 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 					Log.i(TAG, "Already started");
 				}
 			}
+		} else {
+			throw new RuntimeException("Source or OnErrorListener not set");
 		}
 	}
 	
 	public void pausePlayback() {
-		if (mRun && !mPause) {
+		if (mRun) {
+			Log.i(TAG, "pausePlayback()");
+			/* pause */
 			mPause = true;
-			try {
-				mIn.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} 
+			if (mIn != null) {
+				try {
+					mIn.close();
+					Log.i(TAG, "MjpegInputStream closed!");
+				} catch (IOException e) {
+					Log.e(TAG, "pausePlayback(): IOException caught");
+				}
+			}
 		} else {
-			Log.i(TAG, "Not started or already paused");
+			Log.i(TAG, "Not started");
+		}
+	}
+	
+	private void doPause() throws InterruptedException {
+		Log.i(TAG, "doPause()");
+
+		mIn = null;
+		
+		// notify videoplayer
+		mOnErrorListener.onError();
+		mOnErrorListener = null;
+		
+		// draw no signal
+		drawNoSignal();
+		
+		try {
+			synchronized(pauseWait) {
+				Log.i(TAG, "drawing thread paused");
+				pauseWait.wait();
+				Log.i(TAG, "drawing thread resumed!");
+			}
+		} catch (InterruptedException e) {
+			Log.e(TAG, "doPause(): InterruptedException caught");
 		}
 	}
 
@@ -322,6 +348,10 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 	public void setSource(MjpegInputStream source) {
 		mIn = source;
 		//startPlayback();
+	}
+	
+	public void setOnErrorListener(OnErrorListener oel) {
+		mOnErrorListener = oel;
 	}
 
 	public void setOverlayPaint(Paint p) {

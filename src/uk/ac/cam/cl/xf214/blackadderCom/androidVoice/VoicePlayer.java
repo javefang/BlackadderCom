@@ -7,6 +7,7 @@ import org.xiph.speex.SpeexDecoder;
 
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiver;
+import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAEvent;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 
@@ -39,14 +40,16 @@ public class VoicePlayer extends Thread {
 	private AudioTrack mAudioTrack;
 	private volatile boolean released;
 	private SpeexDecoder decoder;
+	private StreamFinishedListener mStreamFinishedListener;
 	
 	private VoiceCodec codec = VoiceCodec.PCM;
 	
 	//private int hashId; // used for identifying player
 	
-	public VoicePlayer(BAPacketReceiver receiver, VoiceCodec codec) {
+	public VoicePlayer(BAPacketReceiver receiver, VoiceCodec codec, StreamFinishedListener streamFinishedListener) {
 		Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 		this.receiver = receiver;
+		this.mStreamFinishedListener = streamFinishedListener;
 		this.recvQueue = receiver.getDataQueue();
 		this.codec = codec;
 		
@@ -177,6 +180,7 @@ public class VoicePlayer extends Thread {
 			interrupt();	// this ensure thread to exit waiting status (goes to exception)
 			// stop receiving new events
 			receiver.release();
+			mStreamFinishedListener.streamFinished(receiver.getRid());
 		}
 	}
 	

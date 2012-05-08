@@ -32,8 +32,6 @@ public class VoiceRecorder extends Thread {
 	public static final int SPX_MODE = 1;	 // 1=WB
 	public static final int SPX_QUALITY = 8;	// Q=8
 	
-	public static final byte[] FIN_PKT = new byte[0];
-	
 	private int pktSizeByte;
 	private int speexFrameSize;
 	private boolean released;
@@ -89,7 +87,6 @@ public class VoiceRecorder extends Thread {
 		
 		Log.i(TAG, "Recorder stopped");
 		
-		sender.send(FIN_PKT);	// send terminate mark
 		sender.release();	// terminate the sender
 		Log.i(TAG, "Recorder thread terminated!");
 	}

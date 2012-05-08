@@ -1,4 +1,4 @@
-package de.mjpegsample;
+	package de.mjpegsample;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -52,18 +52,18 @@ public class MjpegInputStream extends DataInputStream {
         return (end < 0) ? (-1) : (end - sequence.length);
     }
 
-    private int parseContentLength(byte[] headerBytes) throws IOException, NumberFormatException {
+    private int parseContentLength(byte[] headerBytes) throws NumberFormatException {
         return Integer.parseInt(BAHelper.byteToText(headerBytes));
-    }   
+    }
 
     public Bitmap readMjpegFrame() throws IOException {
-        //Log.i(TAG, "readMjpegFrame() " + System.currentTimeMillis());
+        //Log.i(TAG, "reading header...");
         mark(FRAME_MAX_LENGTH);
         int headerLen = getStartOfSequence(this, SOI_MARKER);
-        //Log.i(TAG, "Got header!");
         reset();
         byte[] header = new byte[headerLen];
         readFully(header);
+        //Log.i(TAG, "reading content length...");
         try {
             mContentLength = parseContentLength(header);
         } catch (NumberFormatException nfe) { 
@@ -72,10 +72,13 @@ public class MjpegInputStream extends DataInputStream {
             mContentLength = getEndOfSeqeunce(this, EOF_MARKER); 
         }
         reset();
+        //Log.i(TAG, "reading content (skipping header)...");
         byte[] frameData = new byte[mContentLength];
         skipBytes(headerLen);
+        //Log.i(TAG, "reading content...");
         readFully(frameData);
-        Bitmap bitmap = BitmapFactory.decodeStream(new ByteArrayInputStream(frameData));
+        //Log.i(TAG, "Generating bitmap...");
+        Bitmap bitmap = BitmapFactory.decodeStream(new ByteArrayInputStream(frameData));	// TODO: maybe use decodeByteArray() here?
         //Log.i(TAG, "Returning bitmap " + bitmap);
         return bitmap;
     }

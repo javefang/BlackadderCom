@@ -17,6 +17,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAItem;
 public class BAPacketSender {
 	public static final String TAG = "BAPacketSender";
 	public static final byte STRATEGY = Strategy.DOMAIN_LOCAL;
+	public static final byte[] FIN_PKT = new byte[0];
 	
 	private BAWrapperNB wrapper;
 	private HashClassifierCallback classifier;
@@ -90,6 +91,7 @@ public class BAPacketSender {
 	public void release() {
 		// unpublish item
 		if (!released) {
+			send(FIN_PKT);	// termination mark
 			released = true;
 			canPublish = false;	// prevent further send operation
 			wrapper.unpublishItem(item.getId(), item.getPrefix(), STRATEGY, null);

@@ -25,7 +25,7 @@ public class BAPacketSender {
 	private BAItem item;
 	private byte[] fullId;
 	private BAPushControlEventHandler eventHandler;
-	private int pktCount;
+	//private int pktCount;
 	
 	private volatile boolean canPublish;
 	private volatile boolean released;

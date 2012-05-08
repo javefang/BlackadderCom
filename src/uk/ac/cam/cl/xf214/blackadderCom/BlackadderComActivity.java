@@ -11,7 +11,6 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAObject;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.graphics.Canvas;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -124,7 +123,7 @@ public class BlackadderComActivity extends Activity {
     	
     	for (int i = 0; i < views.length; i++) {	
     		views[i] = (MjpegView)findViewById(viewId[i]);
-    		SurfaceHolder holder = views[i].getHolder();
+    		views[i].setViewId(i+1);
     	}
     	
     	preview = (SurfaceView)findViewById(R.id.preview);

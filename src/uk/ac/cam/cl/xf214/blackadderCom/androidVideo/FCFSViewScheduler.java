@@ -2,22 +2,39 @@ package uk.ac.cam.cl.xf214.blackadderCom.androidVideo;
 
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
+import java.util.Comparator;
 
 import android.util.Log;
 
 import de.mjpegsample.MjpegView;
 
+/**
+ * FCFSViewScheduler
+ * Available views will be allocated in a first-come-first-served principle. 
+ * A VideoPlayer not be allocated a view will be placed into a wait queue,
+ * the waiting VideoPlayer will be allocated a view as long as there is any becomes available
+ * 
+ * @author Xinghong Fang
+ *
+ */
 public class FCFSViewScheduler implements ViewScheduler {
 	public static final String TAG = "FCFSViewScheduler";
 	private LinkedList<VideoPlayer> mPlayerWaitQueue;
-	private LinkedList<MjpegView> mViewQueue;
+	//private LinkedList<MjpegView> mViewQueue;
+	private PriorityQueue<MjpegView> mViewQueue;
 	
 	private HashSet<VideoPlayer> mAllPlayer;
 	private MjpegView[] mViews;
 	
 	public FCFSViewScheduler(MjpegView[] views) {
 		mViews = views;
-		mViewQueue = new LinkedList<MjpegView>();
+		//mViewQueue = new LinkedList<MjpegView>();
+		mViewQueue = new PriorityQueue<MjpegView>(views.length, new Comparator<MjpegView>() {
+			public int compare(MjpegView lhs, MjpegView rhs) {
+				return lhs.getViewId() - rhs.getViewId();
+			}
+		});
 		initViewQueue();
 		mPlayerWaitQueue = new LinkedList<VideoPlayer>();
 		mAllPlayer = new HashSet<VideoPlayer>();

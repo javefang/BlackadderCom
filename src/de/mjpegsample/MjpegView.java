@@ -46,6 +46,8 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 	private String noSignalText;
 	
 	private Object pauseWait;
+	
+	private int mViewId;
 
 	public class MjpegViewThread extends Thread {
 		private SurfaceHolder mSurfaceHolder;
@@ -232,6 +234,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 		}
 	}
 	
+	/* normally this method should be called if this view will be further used */
 	public void pausePlayback() {
 		if (mRun) {
 			Log.i(TAG, "pausePlayback()");
@@ -273,7 +276,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 		}
 	}
 
-	@Deprecated
+	/* cannot restart after stop */
 	public void stopPlayback() {
 		if (mRun) {
 			mRun = false;
@@ -376,5 +379,13 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 
 	public void setDisplayMode(int s) {
 		displayMode = s;
+	}
+	
+	public void setViewId(int viewId) {
+		mViewId = viewId;
+	}
+	
+	public int getViewId() {
+		return mViewId;
 	}
 }

@@ -5,22 +5,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.CompressFormat;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
-import android.util.Log;
 
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 
 public class MjpegOutputStream extends DataOutputStream {
 	public static final String TAG = "MjpegOutputStream";
-	private final byte[] SOI_MARKER = { (byte) 0xFF, (byte) 0xD8 };
-    private final byte[] EOF_MARKER = { (byte) 0xFF, (byte) 0xD9 };
+	//private final byte[] SOI_MARKER = { (byte) 0xFF, (byte) 0xD8 };
+    //private final byte[] EOF_MARKER = { (byte) 0xFF, (byte) 0xD9 };
 	
     private int mQuality;
     private int mWidth;
@@ -49,6 +44,7 @@ public class MjpegOutputStream extends DataOutputStream {
 		flush();
 	}
 	
+	/*
 	private boolean addFrameNative(byte[] frameData) throws IOException {
 		// prepare frame data
 		ByteBuffer bmpBuf = ByteBuffer.allocateDirect(frameData.length);
@@ -74,7 +70,6 @@ public class MjpegOutputStream extends DataOutputStream {
 		buf.get(retval);
 		buf.position(0);
 		return retval;
-	}
-	
+	}*/
 	
 }

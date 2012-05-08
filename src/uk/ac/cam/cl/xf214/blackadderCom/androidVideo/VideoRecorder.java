@@ -66,7 +66,7 @@ public class VideoRecorder extends Thread {
 			public void surfaceDestroyed(SurfaceHolder holder) {
 				Log.i(TAG, "surfaceDestroyed()");
 				mSurfaceHolder = null;
-				releaseCamera();
+				release();
 			}
 			public void surfaceCreated(SurfaceHolder holder) {
 				Log.i(TAG, "surfaceCreated()");

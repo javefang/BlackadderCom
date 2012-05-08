@@ -154,16 +154,6 @@ public class VoiceRecorder extends Thread {
 		data.flip();
 	}
 	
-	/* fill the byte[] with recorded audio data */
-	private void readFully(byte[] data, int off, int length) {
-		int read;
-		while (length > 0 && mRec.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-			read = mRec.read(data, off, length);
-			length -= read;
-			off += read;
-		}
-	}
-	
 	/* stop recording */
 	public void release() {
 		if (!released) {

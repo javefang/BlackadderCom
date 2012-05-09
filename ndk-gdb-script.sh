@@ -1,1 +1,0 @@
-NDK_MODULE_PATH=jni ndk-gdb

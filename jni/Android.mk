@@ -1,6 +1,7 @@
 MY_LOCAL_PATH := $(call my-dir)
 LOCAL_PATH := $(MY_LOCAL_PATH)
 
+# build blackadder wrapper
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := uk_ac_cam_cl_xf214_blackadderWrapper
@@ -11,6 +12,7 @@ LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)
 include $(BUILD_SHARED_LIBRARY)
 $(call import-module,blackadder)
 
+include $(MY_LOCAL_PATH)/speex/Android.mk
 #include $(MY_LOCAL_PATH)/pubsub/Android.mk
 #include $(MY_LOCAL_PATH)/netperf/Android.mk
 #include $(MY_LOCAL_PATH)/videopubsub/Android.mk

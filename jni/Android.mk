@@ -14,5 +14,5 @@ $(call import-module,blackadder)
 
 include $(MY_LOCAL_PATH)/speex/Android.mk
 #include $(MY_LOCAL_PATH)/pubsub/Android.mk
-#include $(MY_LOCAL_PATH)/netperf/Android.mk
-#include $(MY_LOCAL_PATH)/videopubsub/Android.mk
+include $(MY_LOCAL_PATH)/netperf/Android.mk
+

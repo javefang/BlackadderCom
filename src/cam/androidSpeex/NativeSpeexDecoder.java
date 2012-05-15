@@ -2,6 +2,8 @@ package cam.androidSpeex;
 
 import java.nio.ByteBuffer;
 
+
+	
 public class NativeSpeexDecoder implements SpeexDef {
 	public static final int DEFAULT_SPEEX_MODEID = SPEEX_MODEID_UWB;
 	
@@ -31,8 +33,8 @@ public class NativeSpeexDecoder implements SpeexDef {
 		return c_get(spxPtr, SPEEX_GET_ENH) == 1;
 	}
 	
-	public short[] decode(ByteBuffer spxBuf) {
-		return c_decode(spxPtr, bits, spxBuf, spxBuf.capacity(), frameSize);
+	public short[] decode(ByteBuffer spxBuf, int frameCount) {
+		return c_decode(spxPtr, bits, spxBuf, spxBuf.capacity(), frameSize, frameCount);
 	}
 	
 	public void destroy() {
@@ -43,6 +45,7 @@ public class NativeSpeexDecoder implements SpeexDef {
 	private native long c_init(int mode);
 	private native void c_set(long spxPtr, int field, int value);
 	private native int c_get(long spxPtr, int field);
-	private native short[] c_decode(long spxPtr, long bits, ByteBuffer spxBuf, int dataLen, int frameSize);
+	private native int c_mode_query(int mode, int field);
+	private native short[] c_decode(long spxPtr, long bits, ByteBuffer spxBuf, int dataLen, int frameSize, int frameCount);
 	private native void c_destroy(long spxPtr, long bits);
 }

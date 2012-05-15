@@ -269,6 +269,7 @@ public class BlackadderComActivity extends Activity {
     	String sharedObjPath = "/data/data/uk.ac.cam.cl.xf214.blackadderCom/lib/";
 		System.load(sharedObjPath + "libgnustl_shared.so");
 		System.load(sharedObjPath + "libblackadder.so");
+		System.load(sharedObjPath + "libspeex.so");
 
 		BAWrapperShared.configureObjectFile(sharedObjPath
 				+ "libuk_ac_cam_cl_xf214_blackadderWrapper.so");

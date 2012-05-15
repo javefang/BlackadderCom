@@ -1,9 +1,8 @@
 package uk.ac.cam.cl.xf214.blackadderCom.androidVoice;
 
-import java.io.StreamCorruptedException;
 import java.util.concurrent.BlockingQueue;
 
-import org.xiph.speex.SpeexDecoder;
+import cam.androidSpeex.NativeSpeexDecoder;
 
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiver;
@@ -13,9 +12,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;
-import android.media.AudioRecord;
 import android.media.AudioTrack;
-import android.os.Process;
 import android.util.Log;
 
 public class VoicePlayer extends Thread {
@@ -39,7 +36,7 @@ public class VoicePlayer extends Thread {
 	private BlockingQueue<BAEvent> recvQueue;
 	private AudioTrack mAudioTrack;
 	private volatile boolean released;
-	private SpeexDecoder decoder;
+	private NativeSpeexDecoder decoder;
 	private StreamFinishedListener mStreamFinishedListener;
 	
 	private VoiceCodec codec = VoiceCodec.PCM;
@@ -47,7 +44,6 @@ public class VoicePlayer extends Thread {
 	//private int hashId; // used for identifying player
 	
 	public VoicePlayer(BAPacketReceiver receiver, VoiceCodec codec, StreamFinishedListener streamFinishedListener) {
-		Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 		this.receiver = receiver;
 		this.mStreamFinishedListener = streamFinishedListener;
 		this.recvQueue = receiver.getDataQueue();
@@ -55,13 +51,8 @@ public class VoicePlayer extends Thread {
 		
 		
 		//this.hashId = Arrays.hashCode(receiver.getRid());
-		decoder = new SpeexDecoder();
-		boolean success = decoder.init(SPX_MODE, SAMPLE_RATE, CHANNELS, SPX_ENHANCED);
-		if (success) {
-			Log.i(TAG, "Speex decoder initialized!");
-		} else {
-			Log.e(TAG, "ERROR: Failed to init Speex decoder!");
-		}
+		decoder = new NativeSpeexDecoder();
+		Log.i(TAG, "Speex decoder initialized!");
 	}
 	
 	public BAPacketReceiver getReceiver() {
@@ -70,8 +61,9 @@ public class VoicePlayer extends Thread {
 	
 	@Override
 	public void run() {
+		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 		released = false;
-		int minBuffer = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);
+		int minBuffer = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);
 		mAudioTrack = new AudioTrack(STREAM_TYPE, SAMPLE_RATE, CHANNEL_CONFIG, 
 				AUDIO_FORMAT, Math.max(minBuffer, TARGET_BUFFER), MODE);
 		mAudioTrack.play();
@@ -127,44 +119,44 @@ public class VoicePlayer extends Thread {
 	private void playbackSpeex() {
 		Log.i(TAG, "Playback in Speex format...");
 		BAEvent event = null;
-		byte[] pktBuf;
-		//int i = 0;
+		final int frameBatchSize = 10;
+		short[] frame;
 		while (!released) {
 			try {
 				//Log.i(TAG, "Waiting for pkt " + i + "...");
-				
 				event = recvQueue.take();
-				pktBuf = event.getDataCopy();
 				//Log.i(TAG, "Pkt " + i++ + " received, length=" + pktBuf.length);
 				// check if terminated
-				if (pktBuf.length == 0) {
+				if (event.getDataLength() == 0) {
 					// stream terminated
 					print("FIN_PKT received: terminating player " + BAHelper.byteToHex(receiver.getRid()));
 					event.freeNativeBuffer();
 					release();
 					break;
 				}
-				
-				decoder.processData(pktBuf, 0, pktBuf.length);
-				int length = decoder.getProcessedDataByteSize();
-				Log.i(TAG, "Decoded size is " + length  + " bytes");
-				
-				byte[] decodedData = new byte[length];
-				decoder.getProcessedData(decodedData, 0);
-				
-				writeFully(decodedData, 0, pktBuf.length);	// write data read from recorder to the buffer				
+				// TODO: maybe we can send a batch of frames (short[]) for encoding and return encoded bytes in batch
+				// TODO: BROKEN, DON"T USE NOW!
+				// TODO: need a way to split the event data into "frameBatchSize" chunks for decoding
+				frame = decoder.decode(event.getDirectData(), frameBatchSize);
+				writeFully(frame, 0, frame.length);	// write data read from recorder to the buffer				
 				event.freeNativeBuffer();
 			} catch (InterruptedException e) {
 				print("InterruptedException caught");
 				break;
-			} catch (StreamCorruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		}		
 	}
 	
 	private void writeFully(byte[] data, int off, int length) {
+		int read;
+		while (length > 0 && mAudioTrack.getPlayState() != AudioTrack.PLAYSTATE_STOPPED) {
+			read = mAudioTrack.write(data, off, length);
+			length -= read;
+			off += read;
+		}
+	}
+	
+	private void writeFully(short[] data, int off, int length) {
 		int read;
 		while (length > 0 && mAudioTrack.getPlayState() != AudioTrack.PLAYSTATE_STOPPED) {
 			read = mAudioTrack.write(data, off, length);

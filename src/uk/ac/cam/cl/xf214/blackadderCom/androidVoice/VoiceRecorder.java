@@ -2,7 +2,7 @@ package uk.ac.cam.cl.xf214.blackadderCom.androidVoice;
 
 import java.nio.ByteBuffer;
 
-import org.xiph.speex.SpeexEncoder;
+import cam.androidSpeex.NativeSpeexEncoder;
 
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
@@ -10,7 +10,6 @@ import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.os.Process;
 import android.util.Log;
 
 public class VoiceRecorder extends Thread {
@@ -28,10 +27,6 @@ public class VoiceRecorder extends Thread {
 	public static final int TARGET_BUFFER = (int)(SAMPLE_RATE * 2 * TARGET_DELAY / 1000.0d);
 	//public static final int MIN_BUFFER_SIZE_BYTE = 8 * 1024;	// 8 KB
 	
-	/* Speex Settings */
-	public static final int SPX_MODE = 1;	 // 1=WB
-	public static final int SPX_QUALITY = 8;	// Q=8
-	
 	private int pktSizeByte;
 	private int speexFrameSize;
 	private boolean released;
@@ -41,28 +36,23 @@ public class VoiceRecorder extends Thread {
 	private VoiceCodec codec = VoiceCodec.SPEEX;
 	
 	/* Speex Encoder Settings */
-	private SpeexEncoder encoder;
+	private NativeSpeexEncoder encoder;
 	
 	public VoiceRecorder(BAPacketSender sender, int pktSizeByte, VoiceCodec codec) {
-		Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 		released = false;
 		this.sender = sender;
 		this.pktSizeByte = pktSizeByte;
 		this.codec = codec;
 		
-		encoder = new SpeexEncoder();
-		boolean success = encoder.init(SPX_MODE, SPX_QUALITY, SAMPLE_RATE, CHANNELS);
+		encoder = new NativeSpeexEncoder();
 		speexFrameSize = encoder.getFrameSize();
-		if (success) {
-			Log.i(TAG, "Speex encoder initialized! Frame size = " + speexFrameSize);
-		} else {
-			Log.e(TAG, "ERROR: Failed to init Speex encoder!");
-		}
+		Log.i(TAG, "Speex encoder initialized! Frame size = " + speexFrameSize);
 	}
 
 	@Override
 	public void run() {
 		Log.i(TAG, "Recorder started");
+		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 		// calculate buffer size
 		int minBuffer = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);
 		
@@ -110,28 +100,17 @@ public class VoiceRecorder extends Thread {
 		Log.i(TAG, "Streaming in Speex format...");
 		short[] frame = new short[speexFrameSize];
 		//ByteBuffer pktBuf = ByteBuffer.allocateDirect(pktSizeByte);
+		final int frameBatchSize = 10;
 		
 		while (!released) {
-			// read frame from AudioRecorder
-			readFully(frame, 0, speexFrameSize);
+			ByteBuffer buf = ByteBuffer.allocateDirect(1400);
 			
-			// encode audio data
-			boolean success = encoder.processData(frame, 0, speexFrameSize);
-			
-			if (!success) {
-				Log.e(TAG, "SPEEX: encoder annot process data!");
+			while (!released) {
+				// read frame from AudioRecorder
+				readFully(frame, 0, speexFrameSize * frameBatchSize);
+				buf.put(encoder.encode(frame, frameBatchSize));
 			}
-			
-			// read encoded data
-			int length = encoder.getProcessedDataByteSize();
-			if (length > 0) {
-				Log.i(TAG, "Encoded size is " + length + " bytes");
-				byte[] encodedData = new byte[length];
-				encoder.getProcessedData(encodedData, 0);
-				sender.send(encodedData);
-			} else {
-				Log.i(TAG, "ERROR: encoded size is " + length + " byte!");
-			}
+			sender.send(buf);
 		}
 		
 	}

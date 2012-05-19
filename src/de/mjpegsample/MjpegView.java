@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -18,17 +19,20 @@ import android.view.SurfaceView;
 
 public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 	public static final String TAG = "MjpegView";
-	public final static int POSITION_UPPER_LEFT = 9;
-	public final static int POSITION_UPPER_RIGHT = 3;
-	public final static int POSITION_LOWER_LEFT = 12;
-	public final static int POSITION_LOWER_RIGHT = 6;
+	public static final int POSITION_UPPER_LEFT = 9;
+	public static final int POSITION_UPPER_RIGHT = 3;
+	public static final int POSITION_LOWER_LEFT = 12;
+	public static final int POSITION_LOWER_RIGHT = 6;
 
-	public final static int SIZE_STANDARD = 1;
-	public final static int SIZE_BEST_FIT = 4;
-	public final static int SIZE_FULLSCREEN = 8;
+	public static final int SIZE_STANDARD = 1;
+	public static final int SIZE_BEST_FIT = 4;
+	public static final int SIZE_FULLSCREEN = 8;
+	
+	public static final int FRAME_DROP_THRESHOLD = 3;
 
 	private MjpegViewThread thread;
 	private MjpegInputStream mIn = null;
+	//private FrameSkipController mFrameSkipCtrl = null;
 	private OnErrorListener mOnErrorListener;
 	private boolean showFps = false;
 	private boolean mRun = false;
@@ -112,6 +116,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 			PorterDuffXfermode mode = new PorterDuffXfermode(
 					PorterDuff.Mode.DST_OVER);
 			Bitmap bm;
+			
 			int width;
 			int height;
 			Rect destRect;
@@ -119,6 +124,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 			Paint p = new Paint();
 			String fps = "";
 			Log.i(TAG, "Starting playback...");
+			//mFrameSkipCtrl.start();
 			while (mRun) {
 				if (surfaceDone) {
 					if (mPause) {
@@ -136,10 +142,16 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 						synchronized (mSurfaceHolder) {
 							try {
 								//Log.i(TAG, "Waiting on readMjpegFrame()..." + System.currentTimeMillis());
-								bm = mIn.readMjpegFrame();
+								byte[] frameData = mIn.readMjpegFrame();
+								//Log.i(TAG, "Frame data get!");
+								if (frameData == null) {
+									// get null because frame skip controller is released, pausePlayback()
+									pausePlayback();
+									continue;
+								}
+								bm = BitmapFactory.decodeByteArray(frameData, 0, frameData.length);
 								if (bm == null) {
 									Log.i(TAG, "Invalid bitmap, skip to next loop");
-									// TODO: failed bitmap decoding can give null value, skip these frames, logic needs to be revised here
 									continue;
 								}
 								//Log.i(TAG, "Got bitmap!");
@@ -257,6 +269,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 		Log.i(TAG, "doPause()");
 
 		mIn = null;
+		//mFrameSkipCtrl = null;
 		
 		// notify videoplayer
 		mOnErrorListener.onError();
@@ -282,15 +295,16 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 			mRun = false;
 			boolean retry = true;
 			while (retry) {
-				try {
-					if (mIn != null) {	
+				if (mIn != null) {
+					try {
 						mIn.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
-					synchronized(pauseWait) {
-						pauseWait.notify();
-					}
-				} catch (IOException ioe) {
-					Log.e(TAG, "stopPlayback(): IOException caught");
+				}
+				synchronized(pauseWait) {
+					pauseWait.notify();
 				}
 				try {
 					thread.join();
@@ -300,6 +314,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 				retry = false;
 			}
 			mIn = null;
+			//mFrameSkipCtrl = null;
 			thread = null;
 			Log.i(TAG, "drawing no signal...");
 			drawNoSignal();
@@ -349,7 +364,11 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 	}
 
 	public void setSource(MjpegInputStream source) {
+		if (source == null) {
+			throw new NullPointerException("Source MjpegInputStream cannot be NULL!");
+		}
 		mIn = source;
+		//mFrameSkipCtrl = new FrameSkipController(source);
 		//startPlayback();
 	}
 	

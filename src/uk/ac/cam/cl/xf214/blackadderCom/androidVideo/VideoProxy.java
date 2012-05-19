@@ -44,7 +44,9 @@ public class VideoProxy {
 	private SurfaceView preview;
 	
 	private VideoRecorder recorder;
-	
+	private int quality = 50;
+	private int width = 176;
+	private int height = 144;
 	
 	private boolean send;
 	private boolean receive;
@@ -132,7 +134,7 @@ public class VideoProxy {
 			try {
 				BAPacketSenderSocketAdapter sender = new BAPacketSenderSocketAdapter(wrapper, classifier, item);
 				Log.i(TAG, "Starting video recorder...");
-				recorder = new VideoRecorder(sender, preview);
+				recorder = new VideoRecorder(sender, preview, width, height, quality);
 				recorder.start();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -180,6 +182,18 @@ public class VideoProxy {
 			}
 			wakeLock.release();
 		}
+	}
+	
+	public void setVideoQuality(int quality) {
+		this.quality = quality;
+		Log.i(TAG, "Set video quality = " + quality);
+	}
+	
+	public void setVideoSize(String sizeStr) {
+		String[] sizeStrArr = sizeStr.split("x");
+		width = Integer.parseInt(sizeStrArr[0]);
+		height = Integer.parseInt(sizeStrArr[1]);
+		Log.i(TAG, "Set recording size to " + width + "x" + height);
 	}
 	
 	public synchronized void release() {

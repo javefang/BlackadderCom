@@ -13,5 +13,20 @@
     <string name="ptt">Push to Talk</string>
     <string name="sendVideo">Send Video</string>
     <string name="recvVideo">Receive Video</string>
+    
+    <string-array name="sample_rate">
+        <item >16 kHz</item>
+        <item >22.05 kHz</item>
+        <item >32 kHz</item>
+        <item >44.1 kHz</item>
+        <item >48 kHz</item>
+    </string-array>
+    
+    <string-array name="video_size">
+        <item >176x144</item>
+        <item >320x240</item>
+        <item >480x360</item>
+        <item >640x480</item>
+    </string-array>
 
 </resources>

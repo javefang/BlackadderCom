@@ -19,7 +19,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
 	public static final String TAG = "BAPacketReceiverSocketAdapter";
 	public static final String DEFAULT_SOCKET_NAME = "BAVideoReceiver";
-	public static final int RESYNC_THRESHOLD = 10;	// player will resync when queue has 10 unhandled event
+	public static final int RESYNC_THRESHOLD = 1000;	// player will resync when queue has 10 unhandled event
 	
 	private LocalServerSocket serverSocket;
 	private LocalSocket recvSocket;
@@ -66,8 +66,9 @@ public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
 						initWait.notify();
 					}
 					while (!released) {
+						
 						if (dataQueue.size() > RESYNC_THRESHOLD) {
-							// when queue size > 10, remove old event to keep audio synced
+							// when queue size > RESYNC_THRESHOLD, remove old event to keep video synced
 							Log.i(TAG, "Resync video");
 							drainDataQueue();
 						}

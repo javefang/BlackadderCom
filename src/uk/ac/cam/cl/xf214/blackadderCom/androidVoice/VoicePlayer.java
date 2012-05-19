@@ -40,9 +40,17 @@ public class VoicePlayer extends Thread {
 	private StreamFinishedListener mStreamFinishedListener;
 	
 	private VoiceCodec codec = VoiceCodec.PCM;
+	private int sampleRate = SAMPLE_RATE;
+	private int targetBuffer = TARGET_BUFFER;
 	
 	//private int hashId; // used for identifying player
+	public VoicePlayer(BAPacketReceiver receiver, VoiceCodec codec, StreamFinishedListener streamFinishedListener, int sampleRate) {
+		this(receiver, codec, streamFinishedListener);
+		this.sampleRate = sampleRate;
+		this.targetBuffer = (int)(sampleRate * 2 * TARGET_DELAY / 1000.0d);
+	}
 	
+	@Deprecated
 	public VoicePlayer(BAPacketReceiver receiver, VoiceCodec codec, StreamFinishedListener streamFinishedListener) {
 		this.receiver = receiver;
 		this.mStreamFinishedListener = streamFinishedListener;
@@ -50,9 +58,6 @@ public class VoicePlayer extends Thread {
 		this.codec = codec;
 		
 		
-		//this.hashId = Arrays.hashCode(receiver.getRid());
-		decoder = new NativeSpeexDecoder();
-		Log.i(TAG, "Speex decoder initialized!");
 	}
 	
 	public BAPacketReceiver getReceiver() {
@@ -63,10 +68,6 @@ public class VoicePlayer extends Thread {
 	public void run() {
 		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 		released = false;
-		int minBuffer = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);
-		mAudioTrack = new AudioTrack(STREAM_TYPE, SAMPLE_RATE, CHANNEL_CONFIG, 
-				AUDIO_FORMAT, Math.max(minBuffer, TARGET_BUFFER), MODE);
-		mAudioTrack.play();
 		
 		switch(codec) {
 		case PCM:
@@ -76,15 +77,15 @@ public class VoicePlayer extends Thread {
 			playbackSpeex();
 			break;
 		}
-		
-		mAudioTrack.stop();
-		mAudioTrack.release();
-		print("AudioTrack stopped and released");
 		print("Voice player for stream " + BAHelper.byteToHex(receiver.getRid()) + " terminated!");
 	}
 	
 	private void playbackPCM() {
-		Log.i(TAG, "Playback in PCM format...");
+		int minBuffer = AudioTrack.getMinBufferSize(sampleRate, CHANNEL_CONFIG, AUDIO_FORMAT);
+		mAudioTrack = new AudioTrack(STREAM_TYPE, sampleRate, CHANNEL_CONFIG, 
+				AUDIO_FORMAT, Math.max(minBuffer, targetBuffer), MODE);
+		mAudioTrack.play();
+		Log.i(TAG, "Playback in PCM format (" + sampleRate + "Hz)...");
 		BAEvent event = null;
 		byte[] pktBuf;
 		//int i = 0;
@@ -114,9 +115,14 @@ public class VoicePlayer extends Thread {
 				break;
 			}
 		}
+		mAudioTrack.stop();
+		mAudioTrack.release();
+		print("AudioTrack stopped and released");
 	}
 	
 	private void playbackSpeex() {
+		decoder = new NativeSpeexDecoder();
+		Log.i(TAG, "Speex decoder initialized!");
 		Log.i(TAG, "Playback in Speex format...");
 		BAEvent event = null;
 		final int frameBatchSize = 10;
@@ -144,7 +150,8 @@ public class VoicePlayer extends Thread {
 				print("InterruptedException caught");
 				break;
 			}
-		}		
+		}
+		decoder.destroy();
 	}
 	
 	private void writeFully(byte[] data, int off, int length) {

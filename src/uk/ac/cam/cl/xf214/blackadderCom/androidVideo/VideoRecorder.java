@@ -46,10 +46,15 @@ public class VideoRecorder extends Thread {
 	private int mWidth = DEFAULT_VIDEO_WIDTH;
 	private int mQuality = 50;
 	
-	public VideoRecorder(BAPacketSenderSocketAdapter sender, SurfaceView preview) throws IOException {
+	//  TODO: add constructor to take quality, width & height
+	public VideoRecorder(BAPacketSenderSocketAdapter sender, SurfaceView preview, int width, int height, int quality) throws IOException{
+		this.mWidth = width;
+		this.mHeight = height;
+		this.mQuality = quality;
 		this.sender = sender;
 		this.preview = preview;
 		this.mjpegOutputStream = new MjpegOutputStream(sender.getOutputStream(), mWidth, mHeight, mQuality);
+		
 	}
 	
 	@Override
@@ -96,7 +101,8 @@ public class VideoRecorder extends Thread {
 		// use camera preview
 		Camera.Parameters camParams = mCamera.getParameters();
 		camParams.setPreviewFormat(ImageFormat.NV21);
-		camParams.setPreviewFpsRange(15, 25);
+		camParams.setPreviewFpsRange(10, 15);
+		//camParams.setPreviewFrameRate(15);
 		camParams.setPreviewSize(mWidth, mHeight);
 		mCamera.setParameters(camParams);
 		
@@ -120,7 +126,7 @@ public class VideoRecorder extends Thread {
 				}
 			}
 		});
-		Log.i(TAG, "Starting camera preview...");
+		Log.i(TAG, "Starting camera preview, size=" + mWidth + "x" + mHeight + ", Q=" + mQuality + "...");
 		mCamera.startPreview();
 		Log.i(TAG, "Camera preview started!");
 		return true;

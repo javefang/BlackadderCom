@@ -141,7 +141,7 @@ char	netserver_id[]="\
 
 #ifndef DEBUG_LOG_FILE
 #ifndef WIN32
-#define DEBUG_LOG_FILE "/tmp/netperf.debug"
+#define DEBUG_LOG_FILE "/sdcard/netperf.debug"
 #else
 #define DEBUG_LOG_FILE "c:\\temp\\netperf.debug"
 #endif  /* WIN32 */

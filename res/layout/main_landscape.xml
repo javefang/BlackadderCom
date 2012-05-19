@@ -49,7 +49,7 @@
         <LinearLayout
             android:id="@+id/content"
             android:layout_width="wrap_content"
-            android:layout_height="176dp"
+            android:layout_height="wrap_content"
             android:orientation="vertical" >
 
             <LinearLayout
@@ -74,30 +74,15 @@
                     android:textOff="@string/receiveVoice"
                     android:textOn="@string/receiveVoice" />
 
-                <RadioGroup
-                    android:id="@+id/rg_codec"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal" >
-
-                    <RadioButton
-                        android:id="@+id/rb_pcm"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true"
-                        android:text="@string/codec_pcm" />
-
-                    <RadioButton
-                        android:id="@+id/rb_speex"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/codec_speex" />
-                </RadioGroup>
+                <Spinner
+                    android:id="@+id/sp_sampleRate"
+                    android:layout_width="150dp"
+                    android:layout_height="wrap_content" />
 
                 <ImageButton
                     android:id="@+id/btn_ptt"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:src="@drawable/mic" />
             </LinearLayout>
 
@@ -120,7 +105,18 @@
                     android:layout_height="wrap_content"
                     android:text="@string/recvVideo"
                     android:textOff="@string/recvVideo"
-                    android:textOn="@string/recvVideo" />
+                    android:textOn="@string/recvVideo"/>
+
+                <Spinner
+                    android:id="@+id/sp_videoSize"
+                    android:layout_width="150dp"
+                    android:layout_height="wrap_content" />
+
+                <SeekBar
+                    android:id="@+id/sb_videoQuality"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content" android:max="10" android:progress="1"/>
+
             </LinearLayout>
 
             <LinearLayout
@@ -136,8 +132,6 @@
                     android:ems="10"
                     android:hint="@string/clientIdHint"
                     android:maxLength="16" >
-
-                    <requestFocus />
                 </EditText>
 
                 <Button

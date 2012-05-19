@@ -25,6 +25,10 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -32,6 +36,9 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -55,10 +62,13 @@ public class BlackadderComActivity extends Activity {
 	private Button btnInit;
 	private ToggleButton tbSend;
 	private ToggleButton tbRecv;
-	private RadioGroup codecSelect;
+	//private RadioGroup codecSelect;
+	private Spinner sampleRateSelect;
 	private ImageButton btnPTT;
 	private ToggleButton tbSendVideo;
 	private ToggleButton tbRecvVideo;
+	private Spinner videoSizeSelect;
+	private SeekBar videoQualityBar;
 	
     /** Called when the activity is first created. */
     @Override
@@ -103,15 +113,19 @@ public class BlackadderComActivity extends Activity {
 	        	btnInit.setEnabled(!enabled);
 	        	tbSend.setEnabled(enabled);
 	        	tbRecv.setEnabled(enabled);
+	        	sampleRateSelect.setEnabled(enabled);
 	        	btnPTT.setEnabled(enabled);
 	        	
 	        	tbSendVideo.setEnabled(enabled);
 	        	tbRecvVideo.setEnabled(enabled);
-	        	
+	        	videoSizeSelect.setEnabled(enabled);
+	        	videoQualityBar.setEnabled(enabled);
 	        	/* KEEP DISABLED */
+	        	/*
 	        	for(int i = 0; i < codecSelect.getChildCount(); i++){
 	        	    ((RadioButton)codecSelect.getChildAt(i)).setEnabled(false);
 	        	}
+	        	*/
     		}
     	});
     }
@@ -133,6 +147,9 @@ public class BlackadderComActivity extends Activity {
     	tbSendVideo = (ToggleButton)findViewById(R.id.tb_sendVideo);
     	tbRecvVideo = (ToggleButton)findViewById(R.id.tb_recvVideo);
     	
+    	videoSizeSelect = (Spinner)findViewById(R.id.sp_videoSize);
+    	videoQualityBar = (SeekBar)findViewById(R.id.sb_videoQuality);
+    	
     	tbSendVideo.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			public void onCheckedChanged(CompoundButton buttonView,
 					boolean isChecked) {
@@ -146,6 +163,57 @@ public class BlackadderComActivity extends Activity {
 				videoProxy.setReceive(isChecked);
 			}
     	});
+    	
+    	ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+            this, R.array.video_size, android.R.layout.simple_spinner_item);
+    	adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    	videoSizeSelect.setAdapter(adapter);
+    	final int[] videoSizeValue = {16000, 22050, 32000, 44100, 48000};
+    	videoSizeSelect.setSelection(0);	// 176x144
+    	videoSizeSelect.setOnItemSelectedListener(new OnItemSelectedListener() {
+			public void onItemSelected(AdapterView<?> arg0, View arg1,
+					int position, long arg3) {
+				if (videoProxy != null) {
+					videoProxy.setVideoSize(videoSizeSelect.getSelectedItem().toString());
+				}
+			}
+
+			public void onNothingSelected(AdapterView<?> arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+    	});
+    	
+    	//final int STEP_SIZE = 10;
+    	final int MIN_SIZE = 1;
+    	videoQualityBar.setProgress(5);
+    	videoQualityBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress,
+					boolean fromUser) {
+				/*
+				progress = ((int)Math.round(progress/STEP_SIZE))*STEP_SIZE;
+				*/
+				if (progress == 0) {
+					progress = MIN_SIZE;
+				}
+			    seekBar.setProgress(progress);
+			    
+				videoProxy.setVideoQuality(progress*10);
+			}
+
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+				
+			}
+    	});
     }
     
     private void initVoiceUI() {
@@ -153,7 +221,8 @@ public class BlackadderComActivity extends Activity {
     	btnInit = (Button)findViewById(R.id.btn_init);
     	tbSend = (ToggleButton)findViewById(R.id.tb_send);
     	tbRecv = (ToggleButton)findViewById(R.id.tb_recv);
-    	codecSelect = (RadioGroup)findViewById(R.id.rg_codec);
+    	//codecSelect = (RadioGroup)findViewById(R.id.rg_codec);
+    	sampleRateSelect = (Spinner)findViewById(R.id.sp_sampleRate);
     	btnPTT = (ImageButton)findViewById(R.id.btn_ptt);    	
     	
     	userIdInput.addTextChangedListener(new TextWatcher() {
@@ -194,6 +263,7 @@ public class BlackadderComActivity extends Activity {
 			}
     	});
     	
+    	/*
     	codecSelect.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
 			@Override
 			public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -205,6 +275,27 @@ public class BlackadderComActivity extends Activity {
 					voiceProxy.setCodec(VoiceCodec.SPEEX);
 					break;
 				}
+			}
+    	});
+    	*/
+    	
+    	ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+            this, R.array.sample_rate, android.R.layout.simple_spinner_item);
+    	adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    	sampleRateSelect.setAdapter(adapter);
+    	final int[] sampleRateValue = {16000, 22050, 32000, 44100, 48000};
+    	sampleRateSelect.setSelection(1);	// 22050
+    	sampleRateSelect.setOnItemSelectedListener(new OnItemSelectedListener() {
+			public void onItemSelected(AdapterView<?> arg0, View arg1,
+					int position, long arg3) {
+				if (voiceProxy != null) {
+					voiceProxy.setSampleRate(sampleRateValue[position]);
+				}
+			}
+
+			public void onNothingSelected(AdapterView<?> arg0) {
+				// TODO Auto-generated method stub
+				
 			}
     	});
     	

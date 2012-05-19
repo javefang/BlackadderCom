@@ -34,34 +34,34 @@ public class VoiceRecorder extends Thread {
 	private AudioRecord mRec;
 	
 	private VoiceCodec codec = VoiceCodec.SPEEX;
+	private int sampleRate = SAMPLE_RATE;
+	private int targetBuffer = TARGET_BUFFER;
 	
 	/* Speex Encoder Settings */
 	private NativeSpeexEncoder encoder;
 	
+	public VoiceRecorder(BAPacketSender sender, int pktSizeByte, VoiceCodec codec, int sampleRate) {
+		this(sender, pktSizeByte, codec);
+		this.sampleRate = sampleRate;
+		this.targetBuffer = (int)(sampleRate * 2 * TARGET_DELAY / 1000.0d); 
+	}
+	
+	@Deprecated
 	public VoiceRecorder(BAPacketSender sender, int pktSizeByte, VoiceCodec codec) {
 		released = false;
 		this.sender = sender;
 		this.pktSizeByte = pktSizeByte;
 		this.codec = codec;
 		
-		encoder = new NativeSpeexEncoder();
-		speexFrameSize = encoder.getFrameSize();
-		Log.i(TAG, "Speex encoder initialized! Frame size = " + speexFrameSize);
+		
 	}
 
 	@Override
 	public void run() {
 		Log.i(TAG, "Recorder started");
 		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-		// calculate buffer size
-		int minBuffer = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);
 		
-		// initialise audio recorder and start recording
-		mRec = new AudioRecord(AUDIO_SOURCE, SAMPLE_RATE, 
-				CHANNEL_CONFIG, AUDIO_FORMAT, 
-				Math.max(minBuffer, TARGET_BUFFER));
-		mRec.startRecording();
-		Log.i(TAG, "Start recording...");
+		Log.i(TAG, "Start recording (" + sampleRate + "Hz)...");
 		switch(codec) {
 		case PCM:
 			recordPCM();
@@ -71,32 +71,39 @@ public class VoiceRecorder extends Thread {
 			break;
 		}
 		
-		// stop audio record when finished
-		mRec.stop();
-		mRec.release();
-		
-		Log.i(TAG, "Recorder stopped");
-		
 		sender.release();	// terminate the sender
 		Log.i(TAG, "Recorder thread terminated!");
 	}
 	
 	private void recordPCM() {
+		// calculate buffer size
+		int minBuffer = AudioRecord.getMinBufferSize(sampleRate, CHANNEL_CONFIG, AUDIO_FORMAT);
+		// initialise audio recorder and start recording
+		mRec = new AudioRecord(AUDIO_SOURCE, sampleRate, 
+				CHANNEL_CONFIG, AUDIO_FORMAT, 
+				Math.max(minBuffer, targetBuffer));
+		mRec.startRecording();
 		Log.i(TAG, "Streaming in PCM format...");
-		// packet buffer, size=MTU
-		//byte[] pktBuf = new byte[pktSizeByte];
 		ByteBuffer pktBuf;
 		// start reading pkt continuously
 		while (!released) {
 			// fill the pktBuf
 			pktBuf = ByteBuffer.allocateDirect(pktSizeByte);
-			//readFully(pktBuf, pktSizeByte);
 			readFully(pktBuf, pktSizeByte);
 			sender.send(pktBuf);
 		}
+		// stop audio record when finished
+		mRec.stop();
+		mRec.release();
+		
+		Log.i(TAG, "Recorder stopped and released");
 	}
 	
 	private void recordSpeex() {
+		encoder = new NativeSpeexEncoder();
+		speexFrameSize = encoder.getFrameSize();
+		Log.i(TAG, "Speex encoder initialized! Frame size = " + speexFrameSize);
+		
 		Log.i(TAG, "Streaming in Speex format...");
 		short[] frame = new short[speexFrameSize];
 		//ByteBuffer pktBuf = ByteBuffer.allocateDirect(pktSizeByte);
@@ -112,7 +119,8 @@ public class VoiceRecorder extends Thread {
 			}
 			sender.send(buf);
 		}
-		
+		encoder.destroy();
+		Log.i(TAG, "NativeSpeexEncoder released!");
 	}
 	
 	private void readFully(short[] data, int off, int length) {

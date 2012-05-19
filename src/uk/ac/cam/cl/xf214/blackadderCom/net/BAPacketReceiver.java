@@ -2,6 +2,7 @@ package uk.ac.cam.cl.xf214.blackadderCom.net;
 
 import java.util.Arrays;
 import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -13,8 +14,9 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 
 public class BAPacketReceiver {
 	public static final String TAG = "BAPacketReceiver";
+	public static final int RESYNC_THRESHOLD = 1000;
 	private byte[] rid;
-	private BlockingQueue<BAEvent> dataQueue;
+	private ArrayBlockingQueue<BAEvent> dataQueue;
 	private HashClassifierCallback classifier;
 	//private StreamFinishedListener streamFinishedListener;
 	private volatile boolean released;
@@ -24,7 +26,7 @@ public class BAPacketReceiver {
 		this.classifier = classifier;
 		this.rid = Arrays.copyOf(rid, rid.length);
 		//this.streamFinishedListener = streamFinishedListener;
-		dataQueue = new LinkedBlockingQueue<BAEvent>();
+		dataQueue = new ArrayBlockingQueue<BAEvent>(RESYNC_THRESHOLD);
 		
 		// register queue to wrapper
 		classifier.registerDataQueue(rid, dataQueue);

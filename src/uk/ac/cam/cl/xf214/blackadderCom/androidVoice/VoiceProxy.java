@@ -25,6 +25,7 @@ public class VoiceProxy {
 	public static enum VoiceCodec {PCM, SPEEX};
 	public static final String TAG = "AndroidVoiceProxy";
 	public static final byte STRATEGY = Strategy.DOMAIN_LOCAL;
+	public static final int DEFAULT_SAMPLE_RATE = 22050; 
 	public static final byte[] VOICE_SCOPE_ID = BAHelper.hexToByte("2222222222222222");
 	
 	//public static final int DEFAULT_BUF_SIZE = 8 * 1024;		// 8K
@@ -45,6 +46,7 @@ public class VoiceProxy {
 	private HashMap<Integer, VoicePlayer> streamMap;
 	
 	private int bufSize;
+	private int sampleRate = DEFAULT_SAMPLE_RATE;
 
 	private boolean send;
 	private boolean receive;
@@ -91,7 +93,7 @@ public class VoiceProxy {
 			}
 		};
 		BAPacketReceiver receiver = new BAPacketReceiver(classifier, id);
-		VoicePlayer player = new VoicePlayer(receiver, codec, sfl);
+		VoicePlayer player = new VoicePlayer(receiver, codec, sfl, sampleRate);
 		streamMap.put(idHash, player);
 		player.start();
 	}
@@ -105,7 +107,7 @@ public class VoiceProxy {
 		if (enabled) {	// start streaming
 			wakeLock.acquire();
 			BAPacketSender sender = new BAPacketSender(wrapper, classifier, item);
-			recorder = new VoiceRecorder(sender, BAWrapperShared.DEFAULT_PKT_SIZE, codec);
+			recorder = new VoiceRecorder(sender, BAWrapperShared.DEFAULT_PKT_SIZE, codec, sampleRate);
 			recorder.start();
 		} else {	// stop streaming
 			if (recorder != null) {
@@ -198,5 +200,14 @@ public class VoiceProxy {
 
 	public void setBufSize(int bufSize) {
 		this.bufSize = bufSize;
+	}
+	
+	public void setSampleRate(int sampleRate) {
+		Log.i(TAG, "Setting sample rate to " + sampleRate + " Hz");
+		this.sampleRate = sampleRate;
+	}
+	
+	public int getSampleRate() {
+		return sampleRate;
 	}
 }

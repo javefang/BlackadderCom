@@ -23,10 +23,10 @@
     </string-array>
     
     <string-array name="video_size">
-        <item >176x144</item>
-        <item >320x240</item>
-        <item >480x360</item>
-        <item >640x480</item>
+        <item >240x160</item>
+        <item >400x240</item>
+        <item >480x320</item>
+        <item >720x480</item>
     </string-array>
 
 </resources>

@@ -73,16 +73,11 @@ public class BAPacketSender {
 	
 	public void send(byte[] data) {
 		if (canPublish) {
-			//Log.i(TAG, "Sending pkt (length=" + data.length + ")...");
-			final ByteBuffer buffer = ByteBuffer.allocateDirect(data.length);
-			buffer.put(data);
-			buffer.flip();
-			wrapper.publishData(fullId, STRATEGY, null, buffer);
-			//Log.i(TAG, "Pkt " + pktCount++ + " sent (length=" + data.length + ")");
+			wrapper.publishData(fullId, STRATEGY, null, data);
 		}
 	}
 	
-	public void send(ByteBuffer data) {
+	public void sendDirect(ByteBuffer data) {
 		if (canPublish) {
 			wrapper.publishData(fullId, STRATEGY, null, data);
 		}

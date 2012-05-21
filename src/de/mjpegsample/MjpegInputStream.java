@@ -21,7 +21,7 @@ public class MjpegInputStream extends DataInputStream {
     private final byte[] EOF_MARKER = { (byte) 0xFF, (byte) 0xD9 };
     //private final String CONTENT_LENGTH = "Content-Length";
     private final static int HEADER_MAX_LENGTH = 100;
-    private final static int FRAME_MAX_LENGTH = 40000 + HEADER_MAX_LENGTH;
+    private final static int FRAME_MAX_LENGTH = 160000 + HEADER_MAX_LENGTH;
     private int mContentLength = -1;
 
     
@@ -78,7 +78,7 @@ public class MjpegInputStream extends DataInputStream {
     }
 
     public byte[] readMjpegFrame() throws IOException {
-        //Log.i(TAG, "reading header...");
+    	//Log.i(TAG, "reading header...");
         mark(FRAME_MAX_LENGTH);
         int headerLen = getStartOfSequence(this, SOI_MARKER);
         reset();
@@ -100,6 +100,5 @@ public class MjpegInputStream extends DataInputStream {
         readFully(frameData);
         //Log.i(TAG, "Generating bitmap...");
         return frameData;
-        
     }
 }

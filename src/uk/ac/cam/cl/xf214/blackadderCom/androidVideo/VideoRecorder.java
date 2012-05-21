@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.xf214.blackadderCom.androidVideo;
 
 import java.io.IOException;
+import java.util.List;
 
 import de.mjpegsample.MjpegOutputStream;
 
@@ -8,10 +9,13 @@ import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSenderSocketAdapter;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
+import android.hardware.Camera.Size;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
+
+
 
 public class VideoRecorder extends Thread {
 	public static final String TAG = "AndroidVideoRecorder";
@@ -102,9 +106,12 @@ public class VideoRecorder extends Thread {
 		Camera.Parameters camParams = mCamera.getParameters();
 		camParams.setPreviewFormat(ImageFormat.NV21);
 		camParams.setPreviewFpsRange(10, 15);
-		//camParams.setPreviewFrameRate(15);
 		camParams.setPreviewSize(mWidth, mHeight);
 		mCamera.setParameters(camParams);
+		List<Size> supportedPreviewSize = camParams.getSupportedPreviewSizes();
+		for (Size s : supportedPreviewSize) {
+			Log.i(TAG, "Supported size " + s.width + "x" + s.height);
+		}
 		
 		Log.i(TAG, "Setting preview display...");
 		try {

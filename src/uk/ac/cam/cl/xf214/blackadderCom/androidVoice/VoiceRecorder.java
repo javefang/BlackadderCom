@@ -67,7 +67,7 @@ public class VoiceRecorder extends Thread {
 			recordPCM();
 			break;
 		case SPEEX:
-			recordSpeex();
+			//recordSpeex();
 			break;
 		}
 		
@@ -84,12 +84,11 @@ public class VoiceRecorder extends Thread {
 				Math.max(minBuffer, targetBuffer));
 		mRec.startRecording();
 		Log.i(TAG, "Streaming in PCM format...");
-		ByteBuffer pktBuf;
+		byte[] pktBuf = new byte[pktSizeByte];
 		// start reading pkt continuously
 		while (!released) {
 			// fill the pktBuf
-			pktBuf = ByteBuffer.allocateDirect(pktSizeByte);
-			readFully(pktBuf, pktSizeByte);
+			readFully(pktBuf, 0, pktSizeByte);
 			sender.send(pktBuf);
 		}
 		// stop audio record when finished
@@ -99,6 +98,7 @@ public class VoiceRecorder extends Thread {
 		Log.i(TAG, "Recorder stopped and released");
 	}
 	
+	/*
 	private void recordSpeex() {
 		encoder = new NativeSpeexEncoder();
 		speexFrameSize = encoder.getFrameSize();
@@ -123,6 +123,7 @@ public class VoiceRecorder extends Thread {
 		Log.i(TAG, "NativeSpeexEncoder released!");
 	}
 	
+	
 	private void readFully(short[] data, int off, int length) {
 		int read;
 		while (length > 0 && mRec.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
@@ -131,7 +132,18 @@ public class VoiceRecorder extends Thread {
 			off += read;
 		}
 	}
+	*/
 	
+	private void readFully(byte[] data, int off, int length) {
+		int read;
+		while (length > 0 && mRec.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+			read = mRec.read(data, off, length);
+			length -= read;
+			off += read;
+		}
+	}
+	
+	/*
 	private void readFully(ByteBuffer data, int length) {
 		int read;
 		while (length > 0 && mRec.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
@@ -140,6 +152,7 @@ public class VoiceRecorder extends Thread {
 		}
 		data.flip();
 	}
+	*/
 	
 	/* stop recording */
 	public void release() {

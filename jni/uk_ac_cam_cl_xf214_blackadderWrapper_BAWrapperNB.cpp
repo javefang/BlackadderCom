@@ -354,6 +354,8 @@ JNIEXPORT void JNICALL Java_uk_ac_cam_cl_xf214_blackadderWrapper_BAWrapperNB_c_1
 	}
 
 	char *data_ptr = (char *)(*env).GetDirectBufferAddress(jbytebuffer);
+
+	// TODO: why performing extra array copy? can we just use *data_ptr from ByteBuffer (allocateDirect)? 
 	char *data_native_ptr = (char *)calloc((int)length, sizeof(char *));
 	for (int i = 0; i < length; i++) {
 		data_native_ptr[i] = data_ptr[i];

@@ -91,6 +91,7 @@ public class BARtpReceiver implements BAPushDataEventHandler {
 			// clear curGranuleFragmentQueue, update curGranule & curTimestamp
 			curGranuleFragmentQueue.clear();
 			curRtpDataLen = 0;
+			// TEST BARtp BRANCH
 		}		
 	}
 	

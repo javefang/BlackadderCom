@@ -1,6 +1,8 @@
 package uk.ac.cam.cl.xf214.blackadderCom.net;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -16,7 +18,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 public class BARtpReceiver implements BAPushDataEventHandler {
 	public static final String TAG = "BARtpReceiver";
 	public static final int DEFAULT_QUEUE_SIZE = 60;	// 60 frames
-	public static final long READ_TIMEOUT_MS = 1000;
+	public static final long READ_TIMEOUT_MS = 500;
 	
 	private HashClassifierCallback mClassifier;
 	private byte[] mRid;
@@ -140,17 +142,14 @@ public class BARtpReceiver implements BAPushDataEventHandler {
 	private void generateBARtpPacket() {
 		// TODO: add checksum if we need to ensure integrity of the BARtpPacket
 		if (!curGranuleFragmentQueue.isEmpty()) {
-			Log.i(TAG, "Complete BARtpPacket, size=" + curRtpDataLen + " bytes");
-			
 			byte[] payload = new byte[curRtpDataLen];
 			int off = 0;
+			
 			for (BARtpPacketFragment frag : curGranuleFragmentQueue) {
 				frag.getRtpPayload().get(payload, off, frag.getDataLength());	// payload: frag -> pkt
 				off += frag.getDataLength();
 				frag.freeNativeMemory();	// free native memory
-				
 			}
-			//Log.i(TAG, "The payload is:\n " + BAHelper.byteToHex(payload));
 			
 			BARtpPacket pkt = new BARtpPacket(curGranule, curTimestamp, payload, curRtpDataLen);
 			dataQueue.offer(pkt);	// TODO: offer can fail here if the queue is full
@@ -165,7 +164,5 @@ public class BARtpReceiver implements BAPushDataEventHandler {
 		curGranuleFragmentQueue.add(frag);
 		curRtpDataLen += frag.getDataLength();
 		curSeq = frag.getSeq();
-		
-		Log.i(TAG, "Receiving pkt " + curSeq + " size=" + frag.getDataLength() + " bytes");
 	}
 }

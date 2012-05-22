@@ -79,7 +79,7 @@ public class BAPacketSender {
 	
 	public void sendDirect(ByteBuffer data, int off, int length) {
 		if (canPublish) {
-			wrapper.publishData(fullId, STRATEGY, null, data, off, length);
+			wrapper.publishData(fullId, STRATEGY, null, data, length);
 		}
 	}
 	

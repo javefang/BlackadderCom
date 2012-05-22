@@ -329,10 +329,10 @@ JNIEXPORT void JNICALL Java_uk_ac_cam_cl_xf214_blackadderWrapper_BAWrapperNB_c_1
 /*
  * Class:     uk_ac_cam_cl_xf214_blackadderWrapper_BAWrapperNB
  * Method:    c_publish_data_direct
- * Signature: (J[BB[BLjava/nio/ByteBuffer;II)V
+ * Signature: (J[BB[BLjava/nio/ByteBuffer;I)V
  */
 JNIEXPORT void JNICALL Java_uk_ac_cam_cl_xf214_blackadderWrapper_BAWrapperNB_c_1publish_1data_1direct
-  (JNIEnv *env, jobject, jlong ba_ptr, jbyteArray name, jbyte strategy, jbyteArray jstr_opt, jobject jbytebuffer, jint off, jint length) {
+  (JNIEnv *env, jobject, jlong ba_ptr, jbyteArray name, jbyte strategy, jbyteArray jstr_opt, jobject jbytebuffer, jint length) {
 	/* find Blackadder object by memory address */
 	NB_Blackadder *ba;
 	ba = (NB_Blackadder *)ba_ptr;
@@ -356,13 +356,15 @@ JNIEXPORT void JNICALL Java_uk_ac_cam_cl_xf214_blackadderWrapper_BAWrapperNB_c_1
 	char *data_ptr = (char *)(*env).GetDirectBufferAddress(jbytebuffer);
 
 	// TODO: why performing extra array copy? can we just use *data_ptr from ByteBuffer (allocateDirect)? 
+	/*
 	char *data_native_ptr = (char *)calloc((int)length, sizeof(char *));
 	for (int i = 0; i < length; i++) {
-		data_native_ptr[i] = data_ptr[off+i];
+		data_native_ptr[i] = data_ptr[i];
 	}
-	
+	(/
+
 	/* call blackadder api to publish data */
-	ba->publish_data(name_str, (char)strategy, str_opt, str_opt_len, data_native_ptr, (int)length);
+	ba->publish_data(name_str, (char)strategy, str_opt, str_opt_len, data_ptr, (int)length);
 	
 	/* release native memory */
 	(*env).ReleaseByteArrayElements(name, name_ptr, (jint)0);

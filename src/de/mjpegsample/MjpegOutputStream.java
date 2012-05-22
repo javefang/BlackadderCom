@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
+import android.util.Log;
 
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 
@@ -36,6 +37,7 @@ public class MjpegOutputStream extends DataOutputStream {
 		ByteArrayOutputStream mJpegOutput = new ByteArrayOutputStream(length);
 		yuvImage.compressToJpeg(mRect, mQuality, mJpegOutput);
 		
+		Log.i(TAG, "Payload is:\n" + BAHelper.byteToHex(mJpegOutput.toByteArray()));
 		// 1. write content length
 		//Log.i(TAG, "Content-length=" + mJpegOutput.size());
 		write(BAHelper.textToByte(mJpegOutput.size() + ""));

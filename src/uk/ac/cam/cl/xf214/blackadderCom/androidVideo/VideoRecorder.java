@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import de.mjpegsample.MjpegDataOutput;
+import de.mjpegsample.OnErrorListener;
 
 import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSender;
 import android.graphics.ImageFormat;
@@ -23,8 +24,6 @@ public class VideoRecorder extends Thread {
 	public static final int DEFAULT_VIDEO_HEIGHT = 160;
 	public static final int FRAME_BUFFER_SIZE = 3;
 	
-	public static final int PREVIEW_FPS = 2;
-	public static final long FRAME_INTERVAL = (int)(1000 * 1000 * 1000 / (double)PREVIEW_FPS);
 	
 	/*
 	private static PreviewMode previewMode;
@@ -106,7 +105,7 @@ public class VideoRecorder extends Thread {
 		// use camera preview
 		Camera.Parameters camParams = mCamera.getParameters();
 		camParams.setPreviewFormat(ImageFormat.NV21);
-		//camParams.setPreviewFpsRange(10, 15);
+		camParams.setPreviewFpsRange(10, 15);
 		camParams.setPreviewSize(mWidth, mHeight);
 		mCamera.setParameters(camParams);
 		// print camera specification
@@ -123,37 +122,28 @@ public class VideoRecorder extends Thread {
 		}
 		
 		// initialise buffer
-		this.mjpegDataOutput = new MjpegDataOutput(mSender, mWidth, mHeight, mQuality, mCamera.getParameters().getPreviewFormat(), FRAME_BUFFER_SIZE);
-		/*
+		OnErrorListener onErrorListener = new OnErrorListener() {
+			@Override
+			public void onError() {
+				release();
+			}
+		};
+		mjpegDataOutput = new MjpegDataOutput(mSender, mWidth, mHeight, mQuality, 
+				mCamera.getParameters().getPreviewFormat(), FRAME_BUFFER_SIZE, mCamera, onErrorListener);
+		mjpegDataOutput.start();
+		
 		final YuvImage[] yuvBuffer = mjpegDataOutput.getYuvBuffer();
 		for (YuvImage yuv : yuvBuffer) {
 			mCamera.addCallbackBuffer(yuv.getYuvData());
-		}*/
+		}
 		
-		mCamera.setPreviewCallback(new PreviewCallback() {
-			private long frameStartTime;
-			private long timeRemain;
+		mCamera.setPreviewCallbackWithBuffer(new PreviewCallback() {
 			public void onPreviewFrame(byte[] data, Camera camera) {
 				try {
-					//Log.i(TAG, "onPreviewFrame() @" + System.currentTimeMillis() / 1000.0d);
-					frameStartTime = System.nanoTime();	// record frame start time
-					//mjpegDataOutput.addFrameYuvBuf(data, camera);
-					mjpegDataOutput.addFrame(data, camera);
-					
-					// sleep for the remaining of the time
-					timeRemain = FRAME_INTERVAL - (System.nanoTime() - frameStartTime);
-					if (timeRemain > 0) {
-						try {
-							//Log.i(TAG, "Sleeping for " + timeRemain);
-							Thread.sleep(timeRemain / 1000000, (int)(timeRemain % 1000000));
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
+					//Log.i(TAG, "onPreviewFrame() on " + System.currentTimeMillis() / 1000.0d + "s");
+					mjpegDataOutput.addFrame(data);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					Log.e(TAG, "IOException caught: " + e.getMessage());
 				}
 			}
 		});

@@ -33,10 +33,13 @@ public class MjpegDataInput {
 	public void frameBufferControl() {
 		int queueSize = mReceiver.getQueueSize();
 		if (queueSize > 50) {
+			Log.i(TAG, "Skipping 10 frames");
 			mReceiver.skipPacket(10);
 		} else if (queueSize > 30) {
+			Log.i(TAG, "Skipping 5 frames");
 			mReceiver.skipPacket(5);
 		} else if (queueSize > 20) {
+			Log.i(TAG, "Skipping 1 frame");
 			mReceiver.skipPacket(1);
 		}
 	}

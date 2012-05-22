@@ -1,7 +1,13 @@
 package uk.ac.cam.cl.xf214.blackadderCom.net;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import de.mjpegsample.NativeJpegLib;
+
+import android.util.Log;
+
+import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 import uk.ac.cam.cl.xf214.blackadderWrapper.ByteHelper;
 
 /* Plan
@@ -22,27 +28,30 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.ByteHelper;
  */
 
 public class BARtpSender {
+	public static final String TAG = "BARtpSender";
 	public static final int PAYLOAD_SIZE = 1400;
 	public static final int HEADER_SIZE = 14; // (4 bytes granule, 2 bytes seq, 8 bytes timestamp)
 	public static final int PKT_SIZE = HEADER_SIZE + PAYLOAD_SIZE;
+	public static final byte[] FIN_PKT = new byte[0];
 	
 	private BAPacketSender mSender;
-	private boolean released;
+	private byte[] mPktBuf;
 	
-	private byte[] curGranuleBytes;
-	private byte[] curTimestampBytes;
+	private boolean released;
 	
 	public BARtpSender(BAPacketSender sender) {
 		mSender = sender;
+		mPktBuf = new byte[PKT_SIZE];
 	}
 	
-	public void send(byte[] data, int granule, long timestamp) {
+	public void send(byte[] data, int granule, long timestamp) throws IOException {
 		if (released) {
-			return;
+			throw new IOException("Calling send() after BARtpSender has been released!");
 		}
+		Log.i(TAG, "Sending payload:\n" + BAHelper.byteToHex(data));
 		
-		curGranuleBytes = ByteHelper.getBytes(granule);
-		curTimestampBytes = ByteHelper.getBytes(timestamp);
+		System.arraycopy(ByteHelper.getBytes(granule), 0, mPktBuf, BARtpPacketFragment.GRANULE_POS, 4);
+		System.arraycopy(ByteHelper.getBytes(timestamp), 0, mPktBuf, BARtpPacketFragment.TIMESTAMP_POS, 8);
 		
 		int off = 0;
 		int remain = data.length;
@@ -63,26 +72,61 @@ public class BARtpSender {
 		}
 	}
 	
+	public void sendDirect(ByteBuffer data, int granule, long timestamp) throws IOException {
+		if (released) {
+			throw new IOException("Calling send() after BARtpSender has been released!");
+		}
+		
+		System.arraycopy(ByteHelper.getBytes(granule), 0, mPktBuf, BARtpPacketFragment.GRANULE_POS, 4);
+		System.arraycopy(ByteHelper.getBytes(timestamp), 0, mPktBuf, BARtpPacketFragment.TIMESTAMP_POS, 8);
+		short seq = 0;
+		int remain;
+		
+		while ((remain = data.remaining()) > 0) {
+			if (remain >= PAYLOAD_SIZE) {
+				sendPktDirect(data, PAYLOAD_SIZE, seq++);
+			} else {
+				sendPktDirect(data, remain, seq++);
+			}
+		}
+	}
+	
 	public void release() {
 		if (!released) {
 			released = true;
 			mSender.release();
+			Log.i(TAG, "BARtpSender released (FIN_PKT sent)!");
 		}
 	}
 	
-	private void sendPkt(byte[] data, int dataOff, int dataLen, short seq) {
+	private void sendPktDirect(ByteBuffer data, int length, short seq) {
+		data.limit(data.position() + length);	// limit the position of source data that can be read
+		ByteBuffer buf = NativeJpegLib.allocateNativeBuffer(PKT_SIZE);
+		
 		// WRITE HEADER
-		ByteBuffer buf = ByteBuffer.allocateDirect(PKT_SIZE);
-		buf.put(curGranuleBytes);			// write granule	(4 bytes)
-		buf.put(ByteHelper.getBytes(seq));	// write seq		(2 bytes)
-		buf.put(curTimestampBytes);			// write timestamp	(8 bytes)
+		System.arraycopy(ByteHelper.getBytes(seq), 0, mPktBuf, BARtpPacketFragment.SEQ_POS, 2);	// write seq (2 bytes)
+		buf.put(mPktBuf, 0, HEADER_SIZE);	// write header
 		
 		// ADD PAYLOAD
-		buf.put(data, dataOff, dataLen);
-		buf.flip();
+		buf.put(data);	// fill the pkt with remaining bytes in 'data'
+		buf.flip();	// set limit to current position (if remaining bytes cannot fill the pkt)
 		
 		// SEND PKT
-		mSender.sendDirect(buf);
+		mSender.sendDirect(buf, 0, buf.remaining());
+		NativeJpegLib.freeNativeBuffer(buf);	// TODO: remove this line if the array copy code in native blackadder lib wrapper is remove
+	}
+	
+	private void sendPkt(byte[] data, int off, int length, short seq) {
+		// WRITE HEADER
+		// granule and timestamp already written
+		System.arraycopy(ByteHelper.getBytes(seq), 0, mPktBuf, BARtpPacketFragment.SEQ_POS, 2);	// write seq		(2 bytes)
+		
+		// ADD PAYLOAD
+		System.arraycopy(data, 0, mPktBuf, BARtpPacketFragment.DATA_POS, length);
+		
+		// SEND PKT
+		mSender.send(mPktBuf, HEADER_SIZE + length);
+		Log.i(TAG, "Sending pkt " + seq + ", size=" + (HEADER_SIZE + length) + " bytes");
 	}
 	
 }

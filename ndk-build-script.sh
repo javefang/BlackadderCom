@@ -1,1 +1,1 @@
-NDK_MODULE_PATH=jni ndk-build
+NDK_MODULE_PATH=jni ndk-build -j2

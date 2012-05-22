@@ -1,7 +1,5 @@
 package uk.ac.cam.cl.xf214.blackadderCom.androidVoice;
 
-import java.nio.ByteBuffer;
-
 import cam.androidSpeex.NativeSpeexEncoder;
 
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
@@ -13,7 +11,7 @@ import android.media.MediaRecorder;
 import android.util.Log;
 
 public class VoiceRecorder extends Thread {
-	public static final String TAG = "AndroidVoiceRecorder";
+	public static final String TAG = "VoiceRecorder";
 	
 	/* AudioRecorder Settings */
 	public static final int AUDIO_SOURCE = MediaRecorder.AudioSource.MIC;
@@ -89,7 +87,7 @@ public class VoiceRecorder extends Thread {
 		while (!released) {
 			// fill the pktBuf
 			readFully(pktBuf, 0, pktSizeByte);
-			sender.send(pktBuf);
+			sender.send(pktBuf, pktBuf.length);
 		}
 		// stop audio record when finished
 		mRec.stop();

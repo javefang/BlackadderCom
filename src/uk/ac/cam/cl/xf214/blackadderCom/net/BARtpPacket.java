@@ -4,21 +4,19 @@ import java.nio.ByteBuffer;
 import java.util.Vector;
 
 public class BARtpPacket {
-	private ByteBuffer mPayload;
+	private byte[] mPayload;
 	private int mGranule;
 	private long mTimestamp;
 	private int mDataLen;
 	
-	public BARtpPacket(int granule, long timestamp, Vector<BARtpPacketFragment> frags, int dataLen) {
-		mPayload = ByteBuffer.allocate(dataLen);
+	public BARtpPacket(int granule, long timestamp, byte[] payload, int dataLen) {
+		mPayload = payload;
 		mGranule = granule;
 		mTimestamp = timestamp;
 		mDataLen = dataLen;
 		
-		for (BARtpPacketFragment frag : frags) {
-			mPayload.put(frag.getRtpPayload());
-			frag.freeNativeMemory();	// free native memory
-		}
+		
+		
 	}
 	
 	public int getGranule() {
@@ -30,7 +28,7 @@ public class BARtpPacket {
 	}
 	
 	public byte[] getData() {
-		return mPayload.array();
+		return mPayload;
 	}
 	
 	public int getDataLength() {

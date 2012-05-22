@@ -2,29 +2,29 @@ package uk.ac.cam.cl.xf214.blackadderCom.androidVideo;
 
 import java.io.IOException;
 
-import de.mjpegsample.MjpegInputStream;
+import de.mjpegsample.MjpegDataInput;
 import de.mjpegsample.MjpegView;
 import de.mjpegsample.OnErrorListener;
 import android.util.Log;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiverSocketAdapter;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpReceiver;
 import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
 
 public class VideoPlayer implements OnErrorListener {
-	public static final String TAG = "AndroidVideoPlayer";
+	public static final String TAG = "VideoPlayer";
 	public static final int RESYNC_THRESHOLD = 10;	// player will resync when queue has 10 unhandled event
 	
-	private BAPacketReceiverSocketAdapter mReceiver;
+	private BARtpReceiver mReceiver;
 	private MjpegView mView;
 	private StreamFinishedListener mStreamFinishedListener;
 	private volatile boolean released;
 	
-	public VideoPlayer(BAPacketReceiverSocketAdapter receiver,
+	public VideoPlayer(BARtpReceiver receiver,
 			StreamFinishedListener sfLis) {
 		mReceiver = receiver;
 		mStreamFinishedListener = sfLis;
 	}
 	
-	public BAPacketReceiverSocketAdapter getReceiver() {
+	public BARtpReceiver getReceiver() {
 		return mReceiver;
 	}
 	
@@ -37,7 +37,11 @@ public class VideoPlayer implements OnErrorListener {
 			//oldView.pausePlayback();	// TODO: print info when stop playback (change in MjpegView)
 			mView = null;
 			// pause data receiving (destroy all incoming pkts)
-			mReceiver.setReceive(false);
+			try {
+				mReceiver.setReceive(false);
+			} catch (IOException e) {
+				Log.e(TAG, e.getMessage());
+			}
 		}
 		
 		// assign new view
@@ -47,20 +51,10 @@ public class VideoPlayer implements OnErrorListener {
 			Log.i(TAG, "Get view: " + mView);
 			released = false;
 			// create MJPEG input stream
-			MjpegInputStream mjpegInputStream;
-			try {
-				mjpegInputStream = new MjpegInputStream(mReceiver.getInputStream());
-				mReceiver.setCloseable(mjpegInputStream);
-			} catch (IOException e) {
-				// TODO: need to add error handling here
-				e.printStackTrace();
-				// reverting setView() : use old view
-				mView = oldView;
-				return view;
-			}
+			MjpegDataInput mjpegDataInput = new MjpegDataInput(mReceiver);
 			
 			// set source
-			mView.setSource(mjpegInputStream);
+			mView.setSource(mjpegDataInput);
 			mView.setOnErrorListener(this);
 			// resume data receiving (baPkt->Socket stream->MjpegInputStream->MJpegView)
 			
@@ -70,7 +64,11 @@ public class VideoPlayer implements OnErrorListener {
 			
 			// start playback
 			view.startPlayback();
-			mReceiver.setReceive(true);
+			try {
+				mReceiver.setReceive(true);
+			} catch (IOException e) {
+				Log.e(TAG, e.getMessage());
+			}
 			Log.i(TAG, "startPlayback()");
 		}
 		

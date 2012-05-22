@@ -100,10 +100,10 @@ JNIEXPORT void JNICALL Java_uk_ac_cam_cl_xf214_blackadderWrapper_BAWrapperNB_c_1
 /*
  * Class:     uk_ac_cam_cl_xf214_blackadderWrapper_BAWrapperNB
  * Method:    c_publish_data_direct
- * Signature: (J[BB[BLjava/nio/ByteBuffer;I)V
+ * Signature: (J[BB[BLjava/nio/ByteBuffer;II)V
  */
 JNIEXPORT void JNICALL Java_uk_ac_cam_cl_xf214_blackadderWrapper_BAWrapperNB_c_1publish_1data_1direct
-  (JNIEnv *, jobject, jlong, jbyteArray, jbyte, jbyteArray, jobject, jint);
+  (JNIEnv *, jobject, jlong, jbyteArray, jbyte, jbyteArray, jobject, jint, jint);
 
 /*
  * Class:     uk_ac_cam_cl_xf214_blackadderWrapper_BAWrapperNB

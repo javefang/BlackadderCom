@@ -37,35 +37,23 @@ public class MjpegDataOutput extends Thread {
 	private int curGranule = 0;
 	private long curTimestamp = 0;	// TODO: timestamp not used for the moment (always 0)
 	
-	public MjpegDataOutput(BARtpSender sender, int width, int height, int quality, int format, int frameBufSize, Camera cam, OnErrorListener onErrorListener) {
+	public MjpegDataOutput(BARtpSender sender, int width, int height, int quality, int frameBufSize, Camera cam, OnErrorListener onErrorListener) {
 		mSender = sender;
 		mWidth = width;
 		mHeight = height;
 		mQuality = quality;
-		mRect = new Rect(0, 0, mWidth, mHeight);
 		mCam = cam;
 		mOnErrorListener = onErrorListener;
+		mRect = new Rect(0, 0, mWidth, mHeight);
 		mYuvBufferIndex = new HashMap<byte[], YuvImage>();
-		
 		encodeQueue = new ArrayBlockingQueue<byte[]>(frameBufSize);
-		
-		// initialize frame buffer
-		/*
-		if (format != ImageFormat.NV21) {
-			Log.e(TAG, "Preview foramt is not NV21 : is " + format);
-		}
-		if (ImageFormat.getBitsPerPixel(format) != ImageFormat.getBitsPerPixel(ImageFormat.NV21)) {
-			Log.e(TAG, "bits per pixel mismatch");
-		}
-		*/
-		
-		int dataBufSize=(int)(mHeight * mWidth * (ImageFormat.getBitsPerPixel(format)/8.0));
+		int dataBufSize=(int)(mHeight * mWidth * (ImageFormat.getBitsPerPixel(ImageFormat.NV21)/8.0));
 		Log.i(TAG, "JPEG output buffer size=" + dataBufSize + " bytes");
 		
 		mYuvBuffer = new YuvImage[frameBufSize];
 		for (int i = 0; i < frameBufSize; i++) {
 			byte[] data = new byte[dataBufSize];
-			mYuvBuffer[i] = new YuvImage(data, format, mWidth, mHeight, null);	// NV21
+			mYuvBuffer[i] = new YuvImage(data, ImageFormat.NV21, mWidth, mHeight, null);	// NV21
 			mYuvBufferIndex.put(data, mYuvBuffer[i]);
 		}
 		
@@ -95,21 +83,10 @@ public class MjpegDataOutput extends Thread {
 			try {
 				encodeFrame(frameData);
 			} catch (IOException e) {
-				// notify VideoRecorder to release
-				mOnErrorListener.onError();
+				mOnErrorListener.onError();	// notify VideoRecorder to release
 			}
 		}
 	}
-	
-	/*
-	@Deprecated
-	public void addFrameFast(byte[] data, Camera camera) throws IOException {
-		// TODO: remove the need of YuvImage by using native YUV420 -> JPEG convert code
-		ByteBuffer buf = NativeJpegLib.encode(mWidth, mHeight, mQuality, data);
-		mSender.sendDirect(buf, curGranule++, curTimestamp); // TODO: timestamp not used here
-		NativeJpegLib.freeNativeBuffer(buf);	// data is copied when packetize
-	    camera.addCallbackBuffer(data);
-	}*/
 	
 	private void encodeFrame(byte[] data) throws IOException {
 		mFrameStartTime = System.currentTimeMillis();	// record frame start time
@@ -137,6 +114,7 @@ public class MjpegDataOutput extends Thread {
 		if (released) {
 			throw new IOException("Calling addFrame() after MjepgDataOutput is released!");
 		}
+
 		if (!encodeQueue.offer(data)) {
 			// consumer only add buffer back after a frame is processed, should not be problem to offer data
 			throw new IOException("Failed to offer frame to encode queue!");
@@ -145,18 +123,6 @@ public class MjpegDataOutput extends Thread {
 			encodeQueue.notify();
 		}
 	}
-	
-	// deprecated due to GC related performance issue
-	/*
-	@Deprecated
-	public void addFrame(byte[] yuvData, Camera camera) throws IOException {
-		YuvImage yuvImage = new YuvImage(yuvData, ImageFormat.NV21, mWidth, mHeight, null);
-		ByteArrayOutputStream jpegOutput = new ByteArrayOutputStream(yuvData.length);
-		yuvImage.compressToJpeg(mRect, mQuality, jpegOutput);
-		mSender.send(jpegOutput.toByteArray(), curGranule++, curTimestamp); // TODO: timestamp not used here
-		jpegOutput.close();
-	}
-	*/
 	
 	public YuvImage[] getYuvBuffer() {
 		return mYuvBuffer;

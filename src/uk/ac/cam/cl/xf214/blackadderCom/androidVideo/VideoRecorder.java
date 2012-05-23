@@ -105,7 +105,6 @@ public class VideoRecorder extends Thread {
 		// use camera preview
 		Camera.Parameters camParams = mCamera.getParameters();
 		camParams.setPreviewFormat(ImageFormat.NV21);
-		//camParams.setPreviewFpsRange(10, 15);
 		camParams.setPreviewSize(mWidth, mHeight);
 		mCamera.setParameters(camParams);
 		// print camera specification
@@ -128,8 +127,7 @@ public class VideoRecorder extends Thread {
 				release();
 			}
 		};
-		mjpegDataOutput = new MjpegDataOutput(mSender, mWidth, mHeight, mQuality, 
-				mCamera.getParameters().getPreviewFormat(), FRAME_BUFFER_SIZE, mCamera, onErrorListener);
+		mjpegDataOutput = new MjpegDataOutput(mSender, mWidth, mHeight, mQuality, FRAME_BUFFER_SIZE, mCamera, onErrorListener);
 		mjpegDataOutput.start();
 		
 		final YuvImage[] yuvBuffer = mjpegDataOutput.getYuvBuffer();

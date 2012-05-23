@@ -105,6 +105,7 @@ public class BARtpSender {
 		}
 	}
 	
+	/* ByteBuffer related performance issue, DO NOT USE FOR NOW */
 	private void sendPktDirect(byte[] data, int off, int length, short seq) {
 		ByteBuffer buf = NativeJpegLib.allocateNativeBuffer(HEADER_SIZE + length);
 		

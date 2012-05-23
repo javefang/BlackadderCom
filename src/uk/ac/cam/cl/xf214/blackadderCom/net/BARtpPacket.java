@@ -1,8 +1,5 @@
 package uk.ac.cam.cl.xf214.blackadderCom.net;
 
-import java.nio.ByteBuffer;
-import java.util.Vector;
-
 public class BARtpPacket {
 	private byte[] mPayload;
 	private int mGranule;

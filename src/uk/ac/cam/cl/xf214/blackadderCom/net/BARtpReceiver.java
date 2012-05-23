@@ -1,17 +1,13 @@
 package uk.ac.cam.cl.xf214.blackadderCom.net;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import android.app.backup.BackupAgentHelper;
 import android.util.Log;
 
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAEvent;
-import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.BAPushDataEventHandler;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 

@@ -2,8 +2,8 @@ CXX=g++
 JNI_LOC = /usr/lib/jvm/java-6-openjdk/include
 #JNI_LOC = /usr/lib/jvm/java-6-sun/include
 JNI_INC+=-I$(JNI_LOC) -I$(JNI_LOC)/linux
-TARGET = ../libs
-OBJ = ../obj
+TARGET = ../../libs
+OBJ = ../../obj
 
 NAME=uk_ac_cam_cl_xf214_blackadderWrapper
 

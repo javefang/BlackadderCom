@@ -1,15 +1,12 @@
 package uk.ac.cam.cl.xf214.blackadderCom.net;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import de.mjpegsample.NativeJpegLib;
 
 import android.util.Log;
 
-import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 import uk.ac.cam.cl.xf214.blackadderWrapper.ByteHelper;
 
 /* Plan
@@ -29,7 +26,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.ByteHelper;
  * incrementing from 0 to Short.MAX_VALUE
  */
 
-public class BARtpSender  {
+public class BARtpSender {
 	public static final String TAG = "BARtpSender";
 	public static final int PAYLOAD_SIZE = 1400;
 	public static final int HEADER_SIZE = 14; // (4 bytes granule, 2 bytes seq, 8 bytes timestamp)

@@ -30,6 +30,8 @@ public class VideoProxy {
 	public static final byte STRATEGY = Strategy.DOMAIN_LOCAL;
 	public static final byte[] VIDEO_SCOPE_ID = BAHelper.hexToByte("3333333333333333");
 	
+	public static final int DEFAULT_FRAME_RATE = 15;
+	
 	private BAScope scope;
 	private byte[] clientId;
 	private BAItem item;
@@ -108,7 +110,7 @@ public class VideoProxy {
 			}
 		};
 		Log.i(TAG, "Creating BARtpReceiver...");
-		BARtpReceiver receiver = new BARtpReceiver(classifier, rid);
+		BARtpReceiver receiver = new BARtpReceiver(classifier, rid, DEFAULT_FRAME_RATE);
 		Log.i(TAG, "Creating VideoPlayer...");
 		VideoPlayer player = new VideoPlayer(receiver, sfLis);
 		Log.i(TAG, "add to mStreamMap");
@@ -129,7 +131,7 @@ public class VideoProxy {
 			try {
 				BARtpSender sender = new BARtpSender(new BAPacketSender(wrapper, classifier, item));
 				Log.i(TAG, "Starting video recorder...");
-				recorder = new VideoRecorder(sender, preview, width, height, quality);
+				recorder = new VideoRecorder(sender, preview, width, height, quality, DEFAULT_FRAME_RATE);
 				recorder.start();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

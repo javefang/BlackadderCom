@@ -47,14 +47,12 @@ public class BARtpSender {
 		if (released) {
 			throw new IOException("Calling send() after BARtpSender has been released!");
 		}
-		
-		System.arraycopy(ByteHelper.getBytes(granule), 0, mPktBuf, BARtpPacketFragment.GRANULE_POS, 4);
-		System.arraycopy(ByteHelper.getBytes(timestamp), 0, mPktBuf, BARtpPacketFragment.TIMESTAMP_POS, 8);
+		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketFragment.GRANULE_POS);
+		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketFragment.TIMESTAMP_POS);
 		
 		int off = 0;
 		int remain = data.length;
-		short seq = 0;
-		
+		short seq = 0;	
 		while (remain > 0) {
 			if (remain > PAYLOAD_SIZE) {
 				sendPkt(data, off, PAYLOAD_SIZE, seq);
@@ -75,8 +73,8 @@ public class BARtpSender {
 			throw new IOException("Calling send() after BARtpSender has been released!");
 		}
 		
-		System.arraycopy(ByteHelper.getBytes(granule), 0, mPktBuf, BARtpPacketFragment.GRANULE_POS, 4);
-		System.arraycopy(ByteHelper.getBytes(timestamp), 0, mPktBuf, BARtpPacketFragment.TIMESTAMP_POS, 8);
+		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketFragment.GRANULE_POS);
+		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketFragment.TIMESTAMP_POS);
 		
 		int off = 0;
 		int remain = data.length;
@@ -110,7 +108,7 @@ public class BARtpSender {
 		ByteBuffer buf = NativeJpegLib.allocateNativeBuffer(HEADER_SIZE + length);
 		
 		// WRITE HEADER
-		System.arraycopy(ByteHelper.getBytes(seq), 0, mPktBuf, BARtpPacketFragment.SEQ_POS, 2);	// write seq (2 bytes)
+		ByteHelper.getBytes(seq, mPktBuf, BARtpPacketFragment.SEQ_POS);
 		buf.put(mPktBuf, 0, HEADER_SIZE);	// write header
 		
 		// ADD PAYLOAD
@@ -126,8 +124,7 @@ public class BARtpSender {
 	
 	private void sendPkt(byte[] data, int off, int length, short seq) {
 		// WRITE HEADER (granule and timestamp already written)
-		System.arraycopy(ByteHelper.getBytes(seq), 0, mPktBuf, BARtpPacketFragment.SEQ_POS, 2);	// write seq		(2 bytes)
-		
+		ByteHelper.getBytes(seq, mPktBuf, BARtpPacketFragment.SEQ_POS);
 		// ADD PAYLOAD
 		System.arraycopy(data, off, mPktBuf, BARtpPacketFragment.DATA_POS, length);
 		// send pkt 

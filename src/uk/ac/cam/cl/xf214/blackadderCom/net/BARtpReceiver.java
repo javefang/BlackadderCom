@@ -13,7 +13,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 
 public class BARtpReceiver implements BAPushDataEventHandler {
 	public static final String TAG = "BARtpReceiver";
-	public static final int DEFAULT_QUEUE_SIZE = 60;	// 60 frames
+	//public static final int DEFAULT_QUEUE_SIZE = 60;	// 60 frames
 	public static final long READ_TIMEOUT_MS = 500;
 	
 	private HashClassifierCallback mClassifier;
@@ -22,6 +22,7 @@ public class BARtpReceiver implements BAPushDataEventHandler {
 	private ArrayBlockingQueue<BARtpPacket> dataQueue;
 	private boolean released = false;
 	private boolean mReceive;
+	private int mQueueSize;
 	
 	private Vector<BARtpPacketFragment> curGranuleFragmentQueue;
 	private int curRtpDataLen = 0;
@@ -29,12 +30,13 @@ public class BARtpReceiver implements BAPushDataEventHandler {
 	private int curSeq = -1;
 	private long curTimestamp = -1;
 	
-	public BARtpReceiver(HashClassifierCallback classifier, byte[] rid) {
+	public BARtpReceiver(HashClassifierCallback classifier, byte[] rid, int queueSize) {
+		mQueueSize = queueSize;
 		mClassifier = classifier;
 		mRid = rid;
 		classifier.registerDataEventHandler(rid, this);
 		
-		dataQueue = new ArrayBlockingQueue<BARtpPacket>(DEFAULT_QUEUE_SIZE);
+		dataQueue = new ArrayBlockingQueue<BARtpPacket>(mQueueSize);
 		curGranuleFragmentQueue = new Vector<BARtpPacketFragment>();
 	}
 	

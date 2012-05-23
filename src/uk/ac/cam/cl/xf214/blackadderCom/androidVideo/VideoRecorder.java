@@ -51,12 +51,14 @@ public class VideoRecorder extends Thread {
 	private int mHeight = DEFAULT_VIDEO_HEIGHT;
 	private int mWidth = DEFAULT_VIDEO_WIDTH;
 	private int mQuality = 50;
+	private int mFrameRate;
 	
 	//  TODO: add constructor to take quality, width & height
-	public VideoRecorder(BARtpSender sender, SurfaceView preview, int width, int height, int quality) throws IOException{
+	public VideoRecorder(BARtpSender sender, SurfaceView preview, int width, int height, int quality, int frameRate) throws IOException {
 		this.mWidth = width;
 		this.mHeight = height;
 		this.mQuality = quality;
+		this.mFrameRate = frameRate;
 		this.preview = preview;
 		this.mSender = sender;
 	}
@@ -127,7 +129,7 @@ public class VideoRecorder extends Thread {
 				release();
 			}
 		};
-		mjpegDataOutput = new MjpegDataOutput(mSender, mWidth, mHeight, mQuality, FRAME_BUFFER_SIZE, mCamera, onErrorListener);
+		mjpegDataOutput = new MjpegDataOutput(mSender, mWidth, mHeight, mQuality, FRAME_BUFFER_SIZE, mFrameRate, mCamera, onErrorListener);
 		mjpegDataOutput.start();
 		
 		final YuvImage[] yuvBuffer = mjpegDataOutput.getYuvBuffer();

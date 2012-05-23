@@ -15,10 +15,13 @@ import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSender;
 public class MjpegDataOutput extends Thread {
 	public static final String TAG = "MjpegDataOutput";
 
-	public static final int PREVIEW_FPS = 15;
-	public static final long FRAME_INTERVAL = (int)(1000 / (double)PREVIEW_FPS);
+	//public static final int PREVIEW_FPS = 15;
+	//public static final long FRAME_INTERVAL = (int)(1000 / (double)PREVIEW_FPS);
 	private long mFrameStartTime;
 	private long mTimeRemain;
+	
+	//private int mFrameRate;
+	private long mFrameInterval;
 	
 	private BARtpSender mSender;
 	private int mWidth;
@@ -37,11 +40,13 @@ public class MjpegDataOutput extends Thread {
 	private int curGranule = 0;
 	private long curTimestamp = 0;	// TODO: timestamp not used for the moment (always 0)
 	
-	public MjpegDataOutput(BARtpSender sender, int width, int height, int quality, int frameBufSize, Camera cam, OnErrorListener onErrorListener) {
+	public MjpegDataOutput(BARtpSender sender, int width, int height, int quality, int frameBufSize, int frameRate, Camera cam, OnErrorListener onErrorListener) {
 		mSender = sender;
 		mWidth = width;
 		mHeight = height;
 		mQuality = quality;
+		//mFrameRate = frameRate;
+		mFrameInterval = (long)(1000 / (double)frameRate);
 		mCam = cam;
 		mOnErrorListener = onErrorListener;
 		mRect = new Rect(0, 0, mWidth, mHeight);
@@ -97,7 +102,7 @@ public class MjpegDataOutput extends Thread {
 		mSender.send(mJpegOutputStream.toByteArray(), curGranule++, curTimestamp);
 		
 		// sleep for the remaining of the frame interval before adding the buffer back to camera
-		mTimeRemain = FRAME_INTERVAL - (System.currentTimeMillis() - mFrameStartTime);
+		mTimeRemain = mFrameInterval - (System.currentTimeMillis() - mFrameStartTime);
 		if (mTimeRemain > 0) {
 			try {
 				//Log.i(TAG, "Sleeping for " + mTimeRemain + "ms");

@@ -18,14 +18,12 @@ public class BAPacketReceiver {
 	private byte[] rid;
 	private ArrayBlockingQueue<BAEvent> dataQueue;
 	private HashClassifierCallback classifier;
-	//private StreamFinishedListener streamFinishedListener;
 	private volatile boolean released;
 	
 	public BAPacketReceiver(HashClassifierCallback classifier, byte[] rid) {
 		this.released = false;
 		this.classifier = classifier;
 		this.rid = Arrays.copyOf(rid, rid.length);
-		//this.streamFinishedListener = streamFinishedListener;
 		dataQueue = new ArrayBlockingQueue<BAEvent>(RESYNC_THRESHOLD);
 		
 		// register queue to wrapper
@@ -52,9 +50,6 @@ public class BAPacketReceiver {
 			Log.i(TAG, "Finishing BAPacketReceiver for info " + BAHelper.byteToHex(rid));
 			released = true;
 			classifier.unregisterDataEventHandler(rid);	// further event will not be sent to the data queue
-			// now events are sent to AndroidVoiceProxy, but will be ignored as the stream hasdID of this stream still hasn't been unregistered from the proxy
-			//streamFinishedListener.streamFinished(rid);	// unregister stream hashID from the proxy
-			// now events are sent to AndroidVoiceProxy, which may create new receiver and player thread
 			Log.i(TAG, "Draining data queue...");
 			drainDataQueue();
 			Log.i(TAG, "BAPacketReceiver released!");

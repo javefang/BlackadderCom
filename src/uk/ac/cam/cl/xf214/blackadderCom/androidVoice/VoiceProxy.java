@@ -6,7 +6,7 @@ import java.util.HashMap;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
-import uk.ac.cam.cl.xf214.blackadderCom.Node;
+import uk.ac.cam.cl.xf214.blackadderCom.BANode;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiver;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
@@ -52,7 +52,7 @@ public class VoiceProxy {
 	private boolean receive;
 	private boolean released;
 	
-	public VoiceProxy(Node node) {
+	public VoiceProxy(BANode node) {
 		this.wrapper = node.getWrapper();
 		this.classifier = node.getClassifier();
 		this.wakeLock = node.getWakeLock();

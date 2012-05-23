@@ -10,7 +10,7 @@ import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.SurfaceView;
 
-import uk.ac.cam.cl.xf214.blackadderCom.Node;
+import uk.ac.cam.cl.xf214.blackadderCom.BANode;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpReceiver;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSender;
@@ -53,7 +53,7 @@ public class VideoProxy {
 	private boolean receive;
 	private boolean released;
 	
-	public VideoProxy(Node node, MjpegView[] views, SurfaceView preview) {
+	public VideoProxy(BANode node, MjpegView[] views, SurfaceView preview) {
 		this.released = false;
 		this.wrapper = node.getWrapper();
 		this.classifier = node.getClassifier();

@@ -31,7 +31,6 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 
 	private MjpegViewThread thread;
 	private MjpegDataInput mIn = null;
-	//private FrameSkipController mFrameSkipCtrl = null;
 	private OnErrorListener mOnErrorListener;
 	private boolean showFps = false;
 	private boolean mRun = false;
@@ -293,7 +292,6 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 				retry = false;
 			}
 			mIn = null;
-			//mFrameSkipCtrl = null;
 			thread = null;
 			Log.i(TAG, "drawing no signal...");
 			drawNoSignal();
@@ -347,7 +345,6 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 			throw new NullPointerException("Source MjpegInputStream cannot be NULL!");
 		}
 		mIn = source;
-		//mFrameSkipCtrl = new FrameSkipController(source);
 		//startPlayback();
 	}
 	

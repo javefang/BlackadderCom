@@ -10,7 +10,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAScope;
 
 
-public class Node {
+public class BANode {
 	public static final byte STRATEGY = Strategy.DOMAIN_LOCAL;
 	
 	private BAWrapperNB wrapper;
@@ -20,7 +20,7 @@ public class Node {
 	private byte[] clientId;
 	private WakeLock wakeLock;
 	
-	public Node(byte[] _roomId, byte[] _clientId, WakeLock _wakeLock) {
+	public BANode(byte[] _roomId, byte[] _clientId, WakeLock _wakeLock) {
 		this.roomId = Arrays.copyOf(_roomId, _roomId.length);
 		this.clientId = Arrays.copyOf(_clientId, _clientId.length);
 		this.wakeLock = _wakeLock;

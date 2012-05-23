@@ -13,6 +13,14 @@ import android.util.Log;
 
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 
+/**
+ * Stream output module for Mjpeg video stream
+ * Deprecated, use MjpegDataOutput instead
+ * @author jave
+ *
+ */
+
+@Deprecated
 public class MjpegOutputStream extends DataOutputStream {
 	public static final String TAG = "MjpegOutputStream";
 	//private final byte[] SOI_MARKER = { (byte) 0xFF, (byte) 0xD8 };

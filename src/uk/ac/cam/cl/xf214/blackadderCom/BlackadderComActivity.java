@@ -62,7 +62,7 @@ public class BlackadderComActivity extends Activity {
 	private MjpegView[] views;
 	private SurfaceView preview;
 	
-	private Node node;
+	private BANode node;
 	private VoiceProxy voiceProxy;
 	private VideoProxy videoProxy;
 	private WakeLock wakeLock;
@@ -102,7 +102,7 @@ public class BlackadderComActivity extends Activity {
         	PowerManager powMan = (PowerManager)getSystemService(Context.POWER_SERVICE);
         	wakeLock = powMan.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "BlackadderComWL");
         	wakeLock.setReferenceCounted(true);
-        	node = new Node(roomId, clientId, wakeLock);
+        	node = new BANode(roomId, clientId, wakeLock);
         	voiceProxy = new VoiceProxy(node);
         	videoProxy = new VideoProxy(node, views, preview);
         	setUIEnabled(btnInit, true);

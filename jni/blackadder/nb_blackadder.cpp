@@ -152,8 +152,8 @@ void *NB_Blackadder::selector(void *arg) {
                         free(msg.msg_iov->iov_base);
                     }
                     free(msg.msg_iov);
-                } 
-//                else {
+				}
+//                 else {
 //                    perror("NB_Blackadder Library: could not write!!");
 //                }
                 FD_ZERO(&write_set);

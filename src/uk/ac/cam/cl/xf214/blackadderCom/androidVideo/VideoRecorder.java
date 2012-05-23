@@ -105,11 +105,11 @@ public class VideoRecorder extends Thread {
 		// use camera preview
 		Camera.Parameters camParams = mCamera.getParameters();
 		camParams.setPreviewFormat(ImageFormat.NV21);
-		camParams.setPreviewFpsRange(10, 15);
+		//camParams.setPreviewFpsRange(10, 15);
 		camParams.setPreviewSize(mWidth, mHeight);
 		mCamera.setParameters(camParams);
 		// print camera specification
-		//printCameraSpec(camParams);
+		printCameraSpec(camParams);
 		
 		Log.i(TAG, "Setting preview display...");
 		try {
@@ -147,6 +147,7 @@ public class VideoRecorder extends Thread {
 				}
 			}
 		});
+		
 		Log.i(TAG, "Starting camera preview, size=" + mWidth + "x" + mHeight + ", Q=" + mQuality + "...");
 		mCamera.startPreview();
 		Log.i(TAG, "Camera preview started!");

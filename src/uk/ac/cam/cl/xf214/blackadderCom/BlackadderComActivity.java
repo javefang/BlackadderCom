@@ -5,6 +5,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Vector;
 
 import de.mjpegsample.MjpegView;
 import de.mjpegsample.NativeJpegLib;
@@ -19,6 +23,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
+import android.hardware.Camera;
+import android.hardware.Camera.Size;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.PowerManager;
@@ -173,11 +179,26 @@ public class BlackadderComActivity extends Activity {
 			}
     	});
     	
-    	ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
-            this, R.array.video_size, android.R.layout.simple_spinner_item);
+    	// get camera spec
+    	Camera camera = Camera.open();	// opening camera
+        Camera.Parameters cameraParameters = camera.getParameters();
+        List<Camera.Size> camSupportedSize = cameraParameters.getSupportedPreviewSizes();
+        Collections.sort(camSupportedSize, new Comparator<Camera.Size>() {
+			@Override
+			public int compare(Size lhs, Size rhs) {
+				return lhs.width - rhs.width;
+			}
+        });
+    	Vector<String> camSupportedSizeStr = new Vector<String>(camSupportedSize.size());
+    	for (Camera.Size size : camSupportedSize) {
+    		camSupportedSizeStr.add(size.width + "x" + size.height);
+    	}
+    	camera.release();	// releasing camera
+    	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, camSupportedSizeStr);
     	adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    	
     	videoSizeSelect.setAdapter(adapter);
-    	final int[] videoSizeValue = {16000, 22050, 32000, 44100, 48000};
+    	
     	videoSizeSelect.setSelection(0);	// 176x144
     	videoSizeSelect.setOnItemSelectedListener(new OnItemSelectedListener() {
 			public void onItemSelected(AdapterView<?> arg0, View arg1,

@@ -10,7 +10,8 @@ import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.util.Log;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSender;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSenderOutputStream;
 
 public class MjpegDataOutput extends Thread {
 	public static final String TAG = "MjpegDataOutput";
@@ -23,14 +24,15 @@ public class MjpegDataOutput extends Thread {
 	//private int mFrameRate;
 	private long mFrameInterval;
 	
-	private BARtpSender mSender;
+	//private BARtpSender mSender;
 	private int mWidth;
 	private int mHeight;
 	private int mQuality;
 	private Rect mRect;
 	private YuvImage[] mYuvBuffer;
 	private HashMap<byte[], YuvImage> mYuvBufferIndex;
-	private ByteArrayOutputStream mJpegOutputStream;
+	//private ByteArrayOutputStream mJpegOutputStream;
+	private BARtpSenderOutputStream mJpegOutputStream;
 	private Camera mCam;
 	private OnErrorListener mOnErrorListener;
 	
@@ -40,8 +42,8 @@ public class MjpegDataOutput extends Thread {
 	private int curGranule = 0;
 	private long curTimestamp = 0;	// TODO: timestamp not used for the moment (always 0)
 	
-	public MjpegDataOutput(BARtpSender sender, int width, int height, int quality, int frameBufSize, int frameRate, Camera cam, OnErrorListener onErrorListener) {
-		mSender = sender;
+	public MjpegDataOutput(BAPacketSender sender, int width, int height, int quality, int frameBufSize, int frameRate, Camera cam, OnErrorListener onErrorListener) {
+		//mSender = sender;
 		mWidth = width;
 		mHeight = height;
 		mQuality = quality;
@@ -62,7 +64,7 @@ public class MjpegDataOutput extends Thread {
 			mYuvBufferIndex.put(data, mYuvBuffer[i]);
 		}
 		
-		mJpegOutputStream = new ByteArrayOutputStream(dataBufSize);
+		mJpegOutputStream = new BARtpSenderOutputStream(sender);
 	}
 	
 	public void run() {
@@ -96,10 +98,8 @@ public class MjpegDataOutput extends Thread {
 	private void encodeFrame(byte[] data) throws IOException {
 		mFrameStartTime = System.currentTimeMillis();	// record frame start time
 		
-		mJpegOutputStream.reset();
+		mJpegOutputStream.createNewRtpPkt(curGranule++, curTimestamp);
 		mYuvBufferIndex.get(data).compressToJpeg(mRect, mQuality, mJpegOutputStream);
-		//Log.i(TAG, "Compressed frame size = " + mJpegOutputStream.size() + " bytes");
-		mSender.send(mJpegOutputStream.toByteArray(), curGranule++, curTimestamp);
 		
 		// sleep for the remaining of the frame interval before adding the buffer back to camera
 		mTimeRemain = mFrameInterval - (System.currentTimeMillis() - mFrameStartTime);
@@ -143,7 +143,6 @@ public class MjpegDataOutput extends Thread {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			mSender.release();
 			interrupt();
 		}
 		

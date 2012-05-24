@@ -13,7 +13,6 @@ import android.view.SurfaceView;
 import uk.ac.cam.cl.xf214.blackadderCom.BANode;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpReceiver;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSender;
 import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAEvent;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
@@ -129,7 +128,7 @@ public class VideoProxy {
 		if (enabled) {	// start streaming
 			wakeLock.acquire();
 			try {
-				BARtpSender sender = new BARtpSender(new BAPacketSender(wrapper, classifier, item));
+				BAPacketSender sender = new BAPacketSender(wrapper, classifier, item);
 				Log.i(TAG, "Starting video recorder...");
 				recorder = new VideoRecorder(sender, preview, width, height, quality, DEFAULT_FRAME_RATE);
 				recorder.start();

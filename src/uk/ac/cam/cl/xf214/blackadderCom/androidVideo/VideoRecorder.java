@@ -6,7 +6,7 @@ import java.util.List;
 import de.mjpegsample.MjpegDataOutput;
 import de.mjpegsample.OnErrorListener;
 
-import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSender;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 import android.graphics.ImageFormat;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
@@ -24,23 +24,8 @@ public class VideoRecorder extends Thread {
 	public static final int DEFAULT_VIDEO_HEIGHT = 160;
 	public static final int FRAME_BUFFER_SIZE = 3;
 	
-	
-	/*
-	private static PreviewMode previewMode;
-	static {
-		int sdk = Build.VERSION.SDK_INT;
-		if (sdk < 11) {
-			Log.i(TAG, "Using GB preview mode");
-			previewMode = PreviewMode.GB;
-		} else {
-			Log.i(TAG, "Using ICS preview mode");
-			previewMode = PreviewMode.ICS;
-		}
-	}
-	*/
-	
 	private Camera mCamera;
-	private BARtpSender mSender;
+	private BAPacketSender mSender;
 	private MjpegDataOutput mjpegDataOutput;
 	private SurfaceView preview;
 	private SurfaceHolder mSurfaceHolder;
@@ -53,8 +38,7 @@ public class VideoRecorder extends Thread {
 	private int mQuality = 50;
 	private int mFrameRate;
 	
-	//  TODO: add constructor to take quality, width & height
-	public VideoRecorder(BARtpSender sender, SurfaceView preview, int width, int height, int quality, int frameRate) throws IOException {
+	public VideoRecorder(BAPacketSender sender, SurfaceView preview, int width, int height, int quality, int frameRate) throws IOException {
 		this.mWidth = width;
 		this.mHeight = height;
 		this.mQuality = quality;
@@ -110,15 +94,13 @@ public class VideoRecorder extends Thread {
 		camParams.setPreviewSize(mWidth, mHeight);
 		mCamera.setParameters(camParams);
 		// print camera specification
-		printCameraSpec(camParams);
+		//printCameraSpec(camParams);
 		
 		Log.i(TAG, "Setting preview display...");
 		try {
 			mCamera.setPreviewDisplay(mSurfaceHolder);
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			Log.e(TAG, "ERROR: IOException when setting preview display!");
-			e1.printStackTrace();
 			return false;
 		}
 		

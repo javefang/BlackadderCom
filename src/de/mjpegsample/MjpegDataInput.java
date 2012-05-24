@@ -11,7 +11,7 @@ import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpReceiver;
 
 public class MjpegDataInput {
 	public static final String TAG = "MjpegDataInput";
-	public static final long DEFAULT_FRAME_TIMEOUT = 1500;
+	public static final long DEFAULT_FRAME_TIMEOUT = 800;
 	private BARtpReceiver mReceiver;
 	
 	public MjpegDataInput(BARtpReceiver receiver) {
@@ -22,14 +22,20 @@ public class MjpegDataInput {
 		// monitor receiver buffer queue size and skip frames if necessary here
 		//frameBufferControl();
 		BARtpPacket pkt = mReceiver.getBARtpPacket();
-		int timeoutPktCount = 0;
-		while (pkt == null) {	// || mReceiver.getCurrentTimestamp() - pkt.getTimestamp() > DEFAULT_FRAME_TIMEOUT
+		//int timeoutPktCount = 0;
+		// the delay is the interval from before encoding to after decoding
+		long delay = 0;
+		while (pkt == null || (delay = mReceiver.getCurrentTimestamp() - pkt.getTimestamp()) > DEFAULT_FRAME_TIMEOUT) {
 			pkt = mReceiver.getBARtpPacket();
-			timeoutPktCount++;
+			//timeoutPktCount++;
 		}
+		
+		/*
+		Log.i(TAG, "Frame delay: " + delay + "ms");
 		if (timeoutPktCount > 0) {
 			Log.e(TAG, "Timeout packet detected, skipping " + timeoutPktCount + " pkts");
-		}
+		}*/
+		
 		/*
 		if (pkt.getDataLength() != pkt.getData().length) {
 			Log.e(TAG, "BARtpPacket data length mismatch " + pkt.getDataLength() + " / " + pkt.getData().length);

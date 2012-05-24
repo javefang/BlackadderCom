@@ -136,6 +136,14 @@ public class VideoRecorder extends Thread {
 		return true;
 	}
 	
+	/* change video encoding quality in on-the-fly */
+	public void setVideoQuality(int quality) {
+		mQuality = quality;
+		if (mjpegDataOutput != null) {
+			mjpegDataOutput.setVideoQuality(quality);
+		}
+	}
+	
 	public synchronized void release() {
 		Log.i(TAG, "release()");
 		if (released) {

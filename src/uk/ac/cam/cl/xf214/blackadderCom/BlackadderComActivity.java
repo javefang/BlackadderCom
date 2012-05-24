@@ -170,6 +170,7 @@ public class BlackadderComActivity extends Activity {
 			public void onCheckedChanged(CompoundButton buttonView,
 					boolean isChecked) {
 				videoProxy.setSend(isChecked);
+				videoSizeSelect.setEnabled(!isChecked);	// disable video_size selector when recording started
 			}
     	});
     	
@@ -284,6 +285,7 @@ public class BlackadderComActivity extends Activity {
 			public void onCheckedChanged(CompoundButton buttonView,
 					boolean isChecked) {
 				voiceProxy.setSend(isChecked);
+				sampleRateSelect.setEnabled(!isChecked);	// disable sample_rate selector when recording started
 			}
     	});
     	

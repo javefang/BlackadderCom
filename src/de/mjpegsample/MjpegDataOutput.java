@@ -108,6 +108,11 @@ public class MjpegDataOutput extends Thread {
 		mCam.addCallbackBuffer(data);
 	}
 	
+	/* change video encoding quality in on-the-fly */
+	public void setVideoQuality(int quality) {
+		this.mQuality = quality;
+	}
+	
 	public void addFrame(byte[] data) throws IOException {
 		if (released) {
 			throw new IOException("Calling addFrame() after MjepgDataOutput is released!");

@@ -180,8 +180,12 @@ public class VideoProxy {
 		}
 	}
 	
+	/* change video encoding quality in on-the-fly */
 	public void setVideoQuality(int quality) {
 		this.quality = quality;
+		if (recorder != null) {
+			recorder.setVideoQuality(quality);
+		}
 		Log.i(TAG, "Set video quality = " + quality);
 	}
 	

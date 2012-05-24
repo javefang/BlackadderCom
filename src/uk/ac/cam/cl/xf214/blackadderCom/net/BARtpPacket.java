@@ -11,9 +11,6 @@ public class BARtpPacket {
 		mGranule = granule;
 		mTimestamp = timestamp;
 		mDataLen = dataLen;
-		
-		
-		
 	}
 	
 	public int getGranule() {

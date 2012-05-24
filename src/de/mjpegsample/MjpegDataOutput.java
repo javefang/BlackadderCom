@@ -1,6 +1,5 @@
 package de.mjpegsample;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -16,12 +15,9 @@ import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSenderOutputStream;
 public class MjpegDataOutput extends Thread {
 	public static final String TAG = "MjpegDataOutput";
 
-	//public static final int PREVIEW_FPS = 15;
-	//public static final long FRAME_INTERVAL = (int)(1000 / (double)PREVIEW_FPS);
 	private long mFrameStartTime;
 	private long mTimeRemain;
 	
-	//private int mFrameRate;
 	private long mFrameInterval;
 	
 	//private BARtpSender mSender;
@@ -31,7 +27,6 @@ public class MjpegDataOutput extends Thread {
 	private Rect mRect;
 	private YuvImage[] mYuvBuffer;
 	private HashMap<byte[], YuvImage> mYuvBufferIndex;
-	//private ByteArrayOutputStream mJpegOutputStream;
 	private BARtpSenderOutputStream mJpegOutputStream;
 	private Camera mCam;
 	private OnErrorListener mOnErrorListener;
@@ -40,7 +35,6 @@ public class MjpegDataOutput extends Thread {
 	private boolean released = false;
 	
 	private int curGranule = 0;
-	private long curTimestamp = 0;	// TODO: timestamp not used for the moment (always 0)
 	
 	public MjpegDataOutput(BAPacketSender sender, int width, int height, int quality, int frameBufSize, int frameRate, Camera cam, OnErrorListener onErrorListener) {
 		//mSender = sender;
@@ -98,8 +92,9 @@ public class MjpegDataOutput extends Thread {
 	private void encodeFrame(byte[] data) throws IOException {
 		mFrameStartTime = System.currentTimeMillis();	// record frame start time
 		
-		mJpegOutputStream.createNewRtpPkt(curGranule++, curTimestamp);
+		mJpegOutputStream.createNewRtpPkt(curGranule++, mFrameStartTime);
 		mYuvBufferIndex.get(data).compressToJpeg(mRect, mQuality, mJpegOutputStream);
+		mJpegOutputStream.forceSend();
 		
 		// sleep for the remaining of the frame interval before adding the buffer back to camera
 		mTimeRemain = mFrameInterval - (System.currentTimeMillis() - mFrameStartTime);
@@ -108,8 +103,6 @@ public class MjpegDataOutput extends Thread {
 				//Log.i(TAG, "Sleeping for " + mTimeRemain + "ms");
 				Thread.sleep(mTimeRemain);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		}
 		mCam.addCallbackBuffer(data);
@@ -140,8 +133,7 @@ public class MjpegDataOutput extends Thread {
 			try {
 				mJpegOutputStream.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Log.e(TAG, "IOException caught when closing BARtpSenderOutputStream: " + e.getMessage());
 			}
 			interrupt();
 		}

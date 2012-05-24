@@ -45,7 +45,7 @@ public class BARtpSenderOutputStream extends OutputStream {
 	
 	private void sendPkt(byte[] data, int length, short seq) {
 		// WRITE HEADER (granule and timestamp already written)
-		ByteHelper.getBytes(seq, mPktBuf, BARtpPacketFragment.SEQ_POS);
+		ByteHelper.getBytes(seq, mPktBuf, BARtpPacketHelper.SEQ_POS);
 		// send pkt 
 		mSender.send(mPktBuf, length);
 		bufPtr = HEADER_SIZE;	// reset bufPtr
@@ -53,8 +53,8 @@ public class BARtpSenderOutputStream extends OutputStream {
 	
 	public void createNewRtpPkt(int granule, long timestamp) {
 		//Log.i(TAG, "Creating RTP pkt granule=" + granule + ", timestamp=" + timestamp);
-		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketFragment.GRANULE_POS);
-		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketFragment.TIMESTAMP_POS);
+		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketHelper.GRANULE_POS);
+		ByteHelper.getBytes(timestamp, mPktBuf, BARtpPacketHelper.TIMESTAMP_POS);
 		seq = 0;	// reset seq
 	}
 
@@ -69,7 +69,11 @@ public class BARtpSenderOutputStream extends OutputStream {
 
 	@Override
 	public void flush() throws IOException {
+		// DO NOTHING, manual flush only using forceSend()
 		//Log.i(TAG, "OutputStream flush() " + System.currentTimeMillis());
+	}
+	
+	public void forceSend() throws IOException {
 		if (bufPtr > HEADER_SIZE) {
 			//Log.i(TAG, "forceSendPkt(): size = " + bufPtr);
 			// there is at least one byte in the payload

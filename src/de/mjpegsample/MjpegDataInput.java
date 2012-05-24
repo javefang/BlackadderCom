@@ -11,6 +11,7 @@ import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpReceiver;
 
 public class MjpegDataInput {
 	public static final String TAG = "MjpegDataInput";
+	public static final long DEFAULT_FRAME_TIMEOUT = 1500;
 	private BARtpReceiver mReceiver;
 	
 	public MjpegDataInput(BARtpReceiver receiver) {
@@ -21,12 +22,19 @@ public class MjpegDataInput {
 		// monitor receiver buffer queue size and skip frames if necessary here
 		//frameBufferControl();
 		BARtpPacket pkt = mReceiver.getBARtpPacket();
-		while (pkt == null) {
+		int timeoutPktCount = 0;
+		while (pkt == null) {	// || mReceiver.getCurrentTimestamp() - pkt.getTimestamp() > DEFAULT_FRAME_TIMEOUT
 			pkt = mReceiver.getBARtpPacket();
+			timeoutPktCount++;
 		}
+		if (timeoutPktCount > 0) {
+			Log.e(TAG, "Timeout packet detected, skipping " + timeoutPktCount + " pkts");
+		}
+		/*
 		if (pkt.getDataLength() != pkt.getData().length) {
 			Log.e(TAG, "BARtpPacket data length mismatch " + pkt.getDataLength() + " / " + pkt.getData().length);
 		}
+		*/
 		return BitmapFactory.decodeByteArray(pkt.getData(), 0, pkt.getDataLength());
 	}
 	
@@ -38,9 +46,9 @@ public class MjpegDataInput {
 		} else if (queueSize > 30) {
 			Log.i(TAG, "Skipping 5 frames");
 			mReceiver.skipPacket(5);
-		} else if (queueSize > 20) {
-			Log.i(TAG, "Skipping 1 frame");
-			mReceiver.skipPacket(1);
+		} else if (queueSize > 10) {
+			Log.i(TAG, "Skipping 3 frame");
+			mReceiver.skipPacket(3);
 		}
 	}
 }

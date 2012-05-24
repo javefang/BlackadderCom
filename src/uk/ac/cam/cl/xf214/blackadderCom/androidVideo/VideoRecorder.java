@@ -19,9 +19,6 @@ import android.view.SurfaceView;
 
 public class VideoRecorder extends Thread {
 	public static final String TAG = "VideoRecorder";
-	public static enum PreviewMode { GB, ICS };
-	public static final int DEFAULT_VIDEO_WIDTH = 240;
-	public static final int DEFAULT_VIDEO_HEIGHT = 160;
 	public static final int FRAME_BUFFER_SIZE = 3;
 	
 	private Camera mCamera;
@@ -33,9 +30,9 @@ public class VideoRecorder extends Thread {
 	private boolean released;
 	
 	// default video parameters
-	private int mHeight = DEFAULT_VIDEO_HEIGHT;
-	private int mWidth = DEFAULT_VIDEO_WIDTH;
-	private int mQuality = 50;
+	private int mHeight;
+	private int mWidth;
+	private int mQuality;
 	private int mFrameRate;
 	
 	public VideoRecorder(BAPacketSender sender, SurfaceView preview, int width, int height, int quality, int frameRate) throws IOException {

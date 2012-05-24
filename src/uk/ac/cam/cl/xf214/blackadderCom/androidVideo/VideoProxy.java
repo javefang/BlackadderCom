@@ -38,7 +38,6 @@ public class VideoProxy {
 	
 	private BAWrapperNB wrapper;
 	private HashClassifierCallback classifier;
-	//private BAPacketSenderSocketAdapter sender;
 	private WakeLock wakeLock;
 	
 	private HashMap<Integer, VideoPlayer> mStreamMap;

@@ -1,17 +1,33 @@
 package uk.ac.cam.cl.xf214.blackadderCom;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Vector;
+
 import de.mjpegsample.MjpegView;
+import de.mjpegsample.NativeJpegLib;
 import uk.ac.cam.cl.xf214.DebugTool.LocalDebugger;
 import uk.ac.cam.cl.xf214.blackadderCom.androidVideo.VideoProxy;
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy;
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
+import uk.ac.cam.cl.xf214.blackadderWrapper.BAWrapperNB;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAWrapperShared;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAObject;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.content.res.Configuration;
+import android.hardware.Camera;
+import android.hardware.Camera.Size;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.telephony.TelephonyManager;
@@ -53,7 +69,7 @@ public class BlackadderComActivity extends Activity {
 	private MjpegView[] views;
 	private SurfaceView preview;
 	
-	private Node node;
+	private BANode node;
 	private VoiceProxy voiceProxy;
 	private VideoProxy videoProxy;
 	private WakeLock wakeLock;
@@ -83,7 +99,7 @@ public class BlackadderComActivity extends Activity {
         initVideoUI();
         setUIEnabled(btnInit, false);
         
-        //runTest();
+        runTest(false);
     }
     
     private boolean connect(String roomIdHex, String clientIdHex) {
@@ -93,7 +109,7 @@ public class BlackadderComActivity extends Activity {
         	PowerManager powMan = (PowerManager)getSystemService(Context.POWER_SERVICE);
         	wakeLock = powMan.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "BlackadderComWL");
         	wakeLock.setReferenceCounted(true);
-        	node = new Node(roomId, clientId, wakeLock);
+        	node = new BANode(roomId, clientId, wakeLock);
         	voiceProxy = new VoiceProxy(node);
         	videoProxy = new VideoProxy(node, views, preview);
         	setUIEnabled(btnInit, true);
@@ -154,6 +170,7 @@ public class BlackadderComActivity extends Activity {
 			public void onCheckedChanged(CompoundButton buttonView,
 					boolean isChecked) {
 				videoProxy.setSend(isChecked);
+				videoSizeSelect.setEnabled(!isChecked);	// disable video_size selector when recording started
 			}
     	});
     	
@@ -164,11 +181,26 @@ public class BlackadderComActivity extends Activity {
 			}
     	});
     	
-    	ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
-            this, R.array.video_size, android.R.layout.simple_spinner_item);
+    	// get camera spec
+    	Camera camera = Camera.open();	// opening camera
+        Camera.Parameters cameraParameters = camera.getParameters();
+        List<Camera.Size> camSupportedSize = cameraParameters.getSupportedPreviewSizes();
+        Collections.sort(camSupportedSize, new Comparator<Camera.Size>() {
+			@Override
+			public int compare(Size lhs, Size rhs) {
+				return lhs.width - rhs.width;
+			}
+        });
+    	Vector<String> camSupportedSizeStr = new Vector<String>(camSupportedSize.size());
+    	for (Camera.Size size : camSupportedSize) {
+    		camSupportedSizeStr.add(size.width + "x" + size.height);
+    	}
+    	camera.release();	// releasing camera
+    	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, camSupportedSizeStr);
     	adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    	
     	videoSizeSelect.setAdapter(adapter);
-    	final int[] videoSizeValue = {16000, 22050, 32000, 44100, 48000};
+    	
     	videoSizeSelect.setSelection(0);	// 176x144
     	videoSizeSelect.setOnItemSelectedListener(new OnItemSelectedListener() {
 			public void onItemSelected(AdapterView<?> arg0, View arg1,
@@ -253,6 +285,7 @@ public class BlackadderComActivity extends Activity {
 			public void onCheckedChanged(CompoundButton buttonView,
 					boolean isChecked) {
 				voiceProxy.setSend(isChecked);
+				sampleRateSelect.setEnabled(!isChecked);	// disable sample_rate selector when recording started
 			}
     	});
     	
@@ -356,11 +389,65 @@ public class BlackadderComActivity extends Activity {
     	return clientIdStr;
     }
 	
+	private void runTest(boolean run) {
+		if (!run) {
+			return;
+		}
+		
+		// start test
+		AssetManager assetManager = getAssets();
+		try {
+			String[] imgs = assetManager.list("img");
+			for (String img : imgs) {
+				Log.i(TAG, "Img file: " + img);
+			}
+			
+			// read yuv file as byte[]
+			Log.i(TAG, "Reading yuv file into byte[]...");
+			InputStream is = assetManager.open("img/still_frame_0.yuv");
+			byte[] yuvBytes = new byte[is.available()];
+			is.read(yuvBytes);
+			is.close();
+			
+			// is native library loaded?
+			BAWrapperShared.c_hex_to_char("test");
+			
+			// native byte buffer allocation test
+			ByteBuffer testBuf = NativeJpegLib.allocateNativeBuffer(1000);
+			NativeJpegLib.freeNativeBuffer(testBuf);
+			
+			// convert yuv -> jpeg
+			Log.i(TAG, "Converting yuv -> jpeg");
+			ByteBuffer buf = NativeJpegLib.encode(2048, 1536, 100, yuvBytes);
+			
+			// save jpeg into file
+			Log.i(TAG, "Saving jpeg files...");
+			String extPath = Environment.getExternalStorageDirectory().toString();
+			File file = new File(extPath, "still.jpg");
+			FileOutputStream fos = new FileOutputStream(file);
+			byte[] jpgBuf = new byte[buf.capacity()];
+			buf.get(jpgBuf);
+			fos.write(jpgBuf);
+			fos.flush();
+			fos.close();
+			Log.i(TAG, "JPEG saved to: " + file.getAbsolutePath());
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	private static void loadJNILibraries() {
     	String sharedObjPath = "/data/data/uk.ac.cam.cl.xf214.blackadderCom/lib/";
-		System.load(sharedObjPath + "libgnustl_shared.so");
+		// load gnustl
+    	System.load(sharedObjPath + "libgnustl_shared.so");
+    	// load blackadder
 		System.load(sharedObjPath + "libblackadder.so");
+		// load speex
 		System.load(sharedObjPath + "libspeex.so");
+		// load libjpeg
+		System.load(sharedObjPath + "libjpeg-mod.so");
 
 		BAWrapperShared.configureObjectFile(sharedObjPath
 				+ "libuk_ac_cam_cl_xf214_blackadderWrapper.so");

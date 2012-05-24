@@ -13,7 +13,14 @@ import android.util.Log;
 // xx xx xx xx (header, content-length, int)
 // FF D8 xx xx xx ... xx xx xx FF D9 (content, JPEG bytes)
 
+/**
+ * Stream input module for Mjpeg video stream
+ * Deprecated, use MjpegDataInput instead
+ * @author jave
+ *
+ */
 
+@Deprecated
 public class MjpegInputStream extends DataInputStream {
 	public static final String TAG = "MjpegInputStream";
 	

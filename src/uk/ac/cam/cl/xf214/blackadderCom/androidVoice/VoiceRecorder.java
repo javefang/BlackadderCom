@@ -1,7 +1,5 @@
 package uk.ac.cam.cl.xf214.blackadderCom.androidVoice;
 
-import java.nio.ByteBuffer;
-
 import cam.androidSpeex.NativeSpeexEncoder;
 
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
@@ -13,7 +11,7 @@ import android.media.MediaRecorder;
 import android.util.Log;
 
 public class VoiceRecorder extends Thread {
-	public static final String TAG = "AndroidVoiceRecorder";
+	public static final String TAG = "VoiceRecorder";
 	
 	/* AudioRecorder Settings */
 	public static final int AUDIO_SOURCE = MediaRecorder.AudioSource.MIC;
@@ -33,27 +31,22 @@ public class VoiceRecorder extends Thread {
 	private BAPacketSender sender;
 	private AudioRecord mRec;
 	
+	
 	private VoiceCodec codec = VoiceCodec.SPEEX;
 	private int sampleRate = SAMPLE_RATE;
 	private int targetBuffer = TARGET_BUFFER;
+	private boolean canSend = false;
 	
 	/* Speex Encoder Settings */
 	private NativeSpeexEncoder encoder;
 	
 	public VoiceRecorder(BAPacketSender sender, int pktSizeByte, VoiceCodec codec, int sampleRate) {
-		this(sender, pktSizeByte, codec);
-		this.sampleRate = sampleRate;
-		this.targetBuffer = (int)(sampleRate * 2 * TARGET_DELAY / 1000.0d); 
-	}
-	
-	@Deprecated
-	public VoiceRecorder(BAPacketSender sender, int pktSizeByte, VoiceCodec codec) {
 		released = false;
 		this.sender = sender;
 		this.pktSizeByte = pktSizeByte;
 		this.codec = codec;
-		
-		
+		this.sampleRate = sampleRate;
+		this.targetBuffer = (int)(sampleRate * 2 * TARGET_DELAY / 1000.0d); 
 	}
 
 	@Override
@@ -71,7 +64,6 @@ public class VoiceRecorder extends Thread {
 			break;
 		}
 		
-		sender.release();	// terminate the sender
 		Log.i(TAG, "Recorder thread terminated!");
 	}
 	
@@ -89,7 +81,7 @@ public class VoiceRecorder extends Thread {
 		while (!released) {
 			// fill the pktBuf
 			readFully(pktBuf, 0, pktSizeByte);
-			sender.send(pktBuf);
+			sender.send(pktBuf, pktBuf.length);
 		}
 		// stop audio record when finished
 		mRec.stop();
@@ -158,12 +150,15 @@ public class VoiceRecorder extends Thread {
 	public void release() {
 		if (!released) {
 			released = true;
+			canSend = false;
 			interrupt();
 			try {
 				join(500);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+
+			sender.release();	// terminate the sender
 			if (this.getState() != Thread.State.TERMINATED) {
 				Log.e(TAG, "Failed to terminate recorder thread!");
 			}

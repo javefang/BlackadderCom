@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -31,8 +30,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 	public static final int FRAME_DROP_THRESHOLD = 3;
 
 	private MjpegViewThread thread;
-	private MjpegInputStream mIn = null;
-	//private FrameSkipController mFrameSkipCtrl = null;
+	private MjpegDataInput mIn = null;
 	private OnErrorListener mOnErrorListener;
 	private boolean showFps = false;
 	private boolean mRun = false;
@@ -142,14 +140,8 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 						synchronized (mSurfaceHolder) {
 							try {
 								//Log.i(TAG, "Waiting on readMjpegFrame()..." + System.currentTimeMillis());
-								byte[] frameData = mIn.readMjpegFrame();
-								//Log.i(TAG, "Frame data get!");
-								if (frameData == null) {
-									// get null because frame skip controller is released, pausePlayback()
-									pausePlayback();
-									continue;
-								}
-								bm = BitmapFactory.decodeByteArray(frameData, 0, frameData.length);
+								bm = mIn.readMjpegFrame();
+								
 								if (bm == null) {
 									Log.i(TAG, "Invalid bitmap, skip to next loop");
 									continue;
@@ -181,8 +173,12 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 										ovl = makeFpsOverlay(overlayPaint, fps);
 									}
 								}
+								bm.recycle();
 							} catch (IOException e) {
 								Log.e(TAG, "run(): IOException caught: " + e.getMessage());
+								pausePlayback();
+							} catch (InterruptedException e) {
+								Log.e(TAG, "run(): InterruptedException caught: " + e.getMessage());
 								pausePlayback();
 							}
 						}
@@ -252,14 +248,6 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 			Log.i(TAG, "pausePlayback()");
 			/* pause */
 			mPause = true;
-			if (mIn != null) {
-				try {
-					mIn.close();
-					Log.i(TAG, "MjpegInputStream closed!");
-				} catch (IOException e) {
-					Log.e(TAG, "pausePlayback(): IOException caught");
-				}
-			}
 		} else {
 			Log.i(TAG, "Not started");
 		}
@@ -267,10 +255,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 	
 	private void doPause() throws InterruptedException {
 		Log.i(TAG, "doPause()");
-
 		mIn = null;
-		//mFrameSkipCtrl = null;
-		
 		// notify videoplayer
 		mOnErrorListener.onError();
 		mOnErrorListener = null;
@@ -295,14 +280,7 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 			mRun = false;
 			boolean retry = true;
 			while (retry) {
-				if (mIn != null) {
-					try {
-						mIn.close();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+				mIn = null;
 				synchronized(pauseWait) {
 					pauseWait.notify();
 				}
@@ -314,7 +292,6 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 				retry = false;
 			}
 			mIn = null;
-			//mFrameSkipCtrl = null;
 			thread = null;
 			Log.i(TAG, "drawing no signal...");
 			drawNoSignal();
@@ -363,12 +340,11 @@ public class MjpegView extends SurfaceView implements SurfaceHolder.Callback {
 		showFps = b;
 	}
 
-	public void setSource(MjpegInputStream source) {
+	public void setSource(MjpegDataInput source) {
 		if (source == null) {
 			throw new NullPointerException("Source MjpegInputStream cannot be NULL!");
 		}
 		mIn = source;
-		//mFrameSkipCtrl = new FrameSkipController(source);
 		//startPlayback();
 	}
 	

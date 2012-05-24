@@ -3,10 +3,12 @@ package uk.ac.cam.cl.xf214.blackadderCom.androidVideo;
 import java.io.IOException;
 import java.util.List;
 
-import de.mjpegsample.MjpegOutputStream;
+import de.mjpegsample.MjpegDataOutput;
+import de.mjpegsample.OnErrorListener;
 
-import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSenderSocketAdapter;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 import android.graphics.ImageFormat;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
@@ -15,50 +17,31 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 
-
-
 public class VideoRecorder extends Thread {
-	public static final String TAG = "AndroidVideoRecorder";
-	public static enum PreviewMode { GB, ICS };
-	public static final int DEFAULT_VIDEO_WIDTH = 176;
-	public static final int DEFAULT_VIDEO_HEIGHT = 144;
+	public static final String TAG = "VideoRecorder";
+	public static final int FRAME_BUFFER_SIZE = 3;
 	
-	/*
-	private static PreviewMode previewMode;
-	static {
-		int sdk = Build.VERSION.SDK_INT;
-		if (sdk < 11) {
-			Log.i(TAG, "Using GB preview mode");
-			previewMode = PreviewMode.GB;
-		} else {
-			Log.i(TAG, "Using ICS preview mode");
-			previewMode = PreviewMode.ICS;
-		}
-	}
-	*/
-	
-	private BAPacketSenderSocketAdapter sender;
 	private Camera mCamera;
-	private MjpegOutputStream mjpegOutputStream;
+	private BAPacketSender mSender;
+	private MjpegDataOutput mjpegDataOutput;
 	private SurfaceView preview;
 	private SurfaceHolder mSurfaceHolder;
 	private Callback callback;
 	private boolean released;
 	
 	// default video parameters
-	private int mHeight = DEFAULT_VIDEO_HEIGHT;
-	private int mWidth = DEFAULT_VIDEO_WIDTH;
-	private int mQuality = 50;
+	private int mHeight;
+	private int mWidth;
+	private int mQuality;
+	private int mFrameRate;
 	
-	//  TODO: add constructor to take quality, width & height
-	public VideoRecorder(BAPacketSenderSocketAdapter sender, SurfaceView preview, int width, int height, int quality) throws IOException{
+	public VideoRecorder(BAPacketSender sender, SurfaceView preview, int width, int height, int quality, int frameRate) throws IOException {
 		this.mWidth = width;
 		this.mHeight = height;
 		this.mQuality = quality;
-		this.sender = sender;
+		this.mFrameRate = frameRate;
 		this.preview = preview;
-		this.mjpegOutputStream = new MjpegOutputStream(sender.getOutputStream(), mWidth, mHeight, mQuality);
-		
+		this.mSender = sender;
 	}
 	
 	@Override
@@ -105,38 +88,57 @@ public class VideoRecorder extends Thread {
 		// use camera preview
 		Camera.Parameters camParams = mCamera.getParameters();
 		camParams.setPreviewFormat(ImageFormat.NV21);
-		camParams.setPreviewFpsRange(10, 15);
 		camParams.setPreviewSize(mWidth, mHeight);
 		mCamera.setParameters(camParams);
-		List<Size> supportedPreviewSize = camParams.getSupportedPreviewSizes();
-		for (Size s : supportedPreviewSize) {
-			Log.i(TAG, "Supported size " + s.width + "x" + s.height);
-		}
+		// print camera specification
+		//printCameraSpec(camParams);
 		
 		Log.i(TAG, "Setting preview display...");
 		try {
 			mCamera.setPreviewDisplay(mSurfaceHolder);
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			Log.e(TAG, "ERROR: IOException when setting preview display!");
-			e1.printStackTrace();
 			return false;
 		}
-		mCamera.setPreviewCallback(new PreviewCallback() {
+		
+		// initialise buffer
+		OnErrorListener onErrorListener = new OnErrorListener() {
+			@Override
+			public void onError() {
+				release();
+			}
+		};
+		mjpegDataOutput = new MjpegDataOutput(mSender, mWidth, mHeight, mQuality, FRAME_BUFFER_SIZE, mFrameRate, mCamera, onErrorListener);
+		mjpegDataOutput.start();
+		
+		final YuvImage[] yuvBuffer = mjpegDataOutput.getYuvBuffer();
+		for (YuvImage yuv : yuvBuffer) {
+			mCamera.addCallbackBuffer(yuv.getYuvData());
+		}
+		
+		mCamera.setPreviewCallbackWithBuffer(new PreviewCallback() {
 			public void onPreviewFrame(byte[] data, Camera camera) {
 				try {
-					//Log.i(TAG, "onPreviewFrame() @ " + System.currentTimeMillis());
-					mjpegOutputStream.addFrame(data, data.length);
+					//Log.i(TAG, "onPreviewFrame() on " + System.currentTimeMillis() / 1000.0d + "s");
+					mjpegDataOutput.addFrame(data);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					Log.e(TAG, "IOException caught: " + e.getMessage());
 				}
 			}
 		});
+		
 		Log.i(TAG, "Starting camera preview, size=" + mWidth + "x" + mHeight + ", Q=" + mQuality + "...");
 		mCamera.startPreview();
 		Log.i(TAG, "Camera preview started!");
 		return true;
+	}
+	
+	/* change video encoding quality in on-the-fly */
+	public void setVideoQuality(int quality) {
+		mQuality = quality;
+		if (mjpegDataOutput != null) {
+			mjpegDataOutput.setVideoQuality(quality);
+		}
 	}
 	
 	public synchronized void release() {
@@ -149,20 +151,63 @@ public class VideoRecorder extends Thread {
 		released = true;
 		releaseCamera();
 		
-		try {
-			mjpegOutputStream.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if (mjpegDataOutput != null) {
+			mjpegDataOutput.release();	// sender is also released in wrapped method
 		}
-		
-		sender.release();
 		
 		if (mSurfaceHolder != null) {
 			mSurfaceHolder.removeCallback(callback);
 			mSurfaceHolder = null;
 		}
 		Log.i(TAG, "Video recorder released!");
+	}
+	
+	public void printCameraSpec(Camera.Parameters camParams) {
+		// print camera spec
+		// 1. supported preview size
+		StringBuffer strBuf = new StringBuffer("Supported preview size: ");
+		for (Size s : camParams.getSupportedPreviewSizes()) {
+			strBuf.append(s.width + "x" + s.height + "; ");
+		}
+		Log.i(TAG, strBuf.toString());
+		// 2. supported preview format
+		strBuf = new StringBuffer("Supported preview format: ");
+		for (int format : camParams.getSupportedPictureFormats()) {
+			String formatStr = "UNKNOWN";
+			switch(format) {
+			case ImageFormat.JPEG:
+				formatStr = "JPEG";
+				break;
+			case ImageFormat.NV16:
+				formatStr = "NV16";
+				break;
+			case ImageFormat.NV21:
+				formatStr = "NV21";
+				break;
+			case ImageFormat.RGB_565:
+				formatStr = "RGB_565";
+				break;
+			case ImageFormat.YUY2:
+				formatStr = "YUV2";
+				break;
+			case ImageFormat.YV12:
+				formatStr = "YV12";
+				break;
+			default:
+				formatStr = "UNKNOWN";
+			}
+			strBuf.append(formatStr + "; ");
+		}
+		Log.i(TAG, strBuf.toString());
+		// 3. supported preview fps range
+		strBuf = new StringBuffer("Supported preview fps range: ");
+		List<int[]> fpsRanges = camParams.getSupportedPreviewFpsRange();
+		if (fpsRanges != null) {
+			for (int[] fps : fpsRanges) {
+				strBuf.append(fps[0] + "/" + fps[1] + "; ");
+			}
+		}
+		Log.i(TAG, strBuf.toString());
 	}
 	
 	private void releaseCamera() {

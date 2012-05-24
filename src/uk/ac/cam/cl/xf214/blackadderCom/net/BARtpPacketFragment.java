@@ -7,11 +7,13 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.BAEvent;
 /*
  * Used only when there are out of order packets
  */
+
+@Deprecated
 public class BARtpPacketFragment {
-	private static final int GRANULE_POS = 0;
-	private static final int SEQ_POS = 4;
-	private static final int TIMESTAMP_POS = 6;
-	private static final int DATA_POS = 14;
+	public static final int GRANULE_POS = 0;
+	public static final int SEQ_POS = 4;
+	public static final int TIMESTAMP_POS = 6;
+	public static final int DATA_POS = 14;
 	
 	private BAEvent mEvent;
 	private int mGranule;
@@ -38,7 +40,7 @@ public class BARtpPacketFragment {
 		return mGranule;
 	}
 	
-	public int getSeq() {
+	public short getSeq() {
 		return mSeq;
 	}
 	

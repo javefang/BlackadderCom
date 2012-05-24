@@ -1,6 +1,11 @@
 package uk.ac.cam.cl.xf214.blackadderCom.net;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import de.mjpegsample.NativeJpegLib;
+
+import android.util.Log;
 
 import uk.ac.cam.cl.xf214.blackadderWrapper.ByteHelper;
 
@@ -11,7 +16,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.ByteHelper;
  * 		1. granule (int 32bit)
  * 		2. sequence (short 16bit)
  * 		3. timestamp (long 64bit)
- * 		4. checksum (int 32bit)
+ * 		#*. checksum (int 32bit) (not implemented)
  * 
  * TOTAL HEADER LENGTH = 16 bytes
  * 
@@ -22,32 +27,32 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.ByteHelper;
  */
 
 public class BARtpSender {
+	public static final String TAG = "BARtpSender";
 	public static final int PAYLOAD_SIZE = 1400;
 	public static final int HEADER_SIZE = 14; // (4 bytes granule, 2 bytes seq, 8 bytes timestamp)
 	public static final int PKT_SIZE = HEADER_SIZE + PAYLOAD_SIZE;
+	public static final byte[] FIN_PKT = new byte[0];
 	
 	private BAPacketSender mSender;
-	private boolean released;
+	private byte[] mPktBuf;
 	
-	private byte[] curGranuleBytes;
-	private byte[] curTimestampBytes;
+	private boolean released;
 	
 	public BARtpSender(BAPacketSender sender) {
 		mSender = sender;
+		mPktBuf = new byte[PKT_SIZE];
 	}
 	
-	public void send(byte[] data, int granule, long timestamp) {
+	public void send(byte[] data, int granule, long timestamp) throws IOException {
 		if (released) {
-			return;
+			throw new IOException("Calling send() after BARtpSender has been released!");
 		}
-		
-		curGranuleBytes = ByteHelper.getBytes(granule);
-		curTimestampBytes = ByteHelper.getBytes(timestamp);
+		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketFragment.GRANULE_POS);
+		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketFragment.TIMESTAMP_POS);
 		
 		int off = 0;
 		int remain = data.length;
-		short seq = 0;
-		
+		short seq = 0;	
 		while (remain > 0) {
 			if (remain > PAYLOAD_SIZE) {
 				sendPkt(data, off, PAYLOAD_SIZE, seq);
@@ -63,26 +68,67 @@ public class BARtpSender {
 		}
 	}
 	
+	public void sendDirect(byte[] data, int granule, long timestamp) throws IOException {
+		if (released) {
+			throw new IOException("Calling send() after BARtpSender has been released!");
+		}
+		
+		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketFragment.GRANULE_POS);
+		ByteHelper.getBytes(granule, mPktBuf, BARtpPacketFragment.TIMESTAMP_POS);
+		
+		int off = 0;
+		int remain = data.length;
+		short seq = 0;
+		
+		while (remain > 0) {
+			if (remain > PAYLOAD_SIZE) {
+				sendPktDirect(data, off, PAYLOAD_SIZE, seq);
+				off += PAYLOAD_SIZE;
+				remain -= PAYLOAD_SIZE;
+			} else {
+				// last pkt of this frame
+				sendPktDirect(data, off, remain, seq);
+				off += remain;
+				remain -= remain;	// remain = 0
+			}
+			seq++;	// increse sequence number
+		}
+	}
+	
 	public void release() {
 		if (!released) {
 			released = true;
 			mSender.release();
+			Log.i(TAG, "BARtpSender released (FIN_PKT sent)!");
 		}
 	}
 	
-	private void sendPkt(byte[] data, int dataOff, int dataLen, short seq) {
+	/* ByteBuffer related performance issue, DO NOT USE FOR NOW */
+	private void sendPktDirect(byte[] data, int off, int length, short seq) {
+		ByteBuffer buf = NativeJpegLib.allocateNativeBuffer(HEADER_SIZE + length);
+		
 		// WRITE HEADER
-		ByteBuffer buf = ByteBuffer.allocateDirect(PKT_SIZE);
-		buf.put(curGranuleBytes);			// write granule	(4 bytes)
-		buf.put(ByteHelper.getBytes(seq));	// write seq		(2 bytes)
-		buf.put(curTimestampBytes);			// write timestamp	(8 bytes)
+		ByteHelper.getBytes(seq, mPktBuf, BARtpPacketFragment.SEQ_POS);
+		buf.put(mPktBuf, 0, HEADER_SIZE);	// write header
 		
 		// ADD PAYLOAD
-		buf.put(data, dataOff, dataLen);
-		buf.flip();
+		buf.put(data, off, length);	// fill the pkt with remaining bytes in 'data'
+		buf.flip();	// set limit to current position (if remaining bytes cannot fill the pkt)
 		
 		// SEND PKT
-		mSender.sendDirect(buf);
+		mSender.sendDirect(buf, 0, buf.capacity());
+		
+		// Now direct ByteBuffer is not copied in BAWrapperNB native code, do not free here
+		//NativeJpegLib.freeNativeBuffer(buf);	// TODO: remove this line if the array copy code in native blackadder lib wrapper is remove
+	}
+	
+	private void sendPkt(byte[] data, int off, int length, short seq) {
+		// WRITE HEADER (granule and timestamp already written)
+		ByteHelper.getBytes(seq, mPktBuf, BARtpPacketFragment.SEQ_POS);
+		// ADD PAYLOAD
+		System.arraycopy(data, off, mPktBuf, BARtpPacketFragment.DATA_POS, length);
+		// send pkt 
+		mSender.send(mPktBuf, HEADER_SIZE + length);
 	}
 	
 }

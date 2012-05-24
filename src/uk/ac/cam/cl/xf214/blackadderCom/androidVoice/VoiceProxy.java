@@ -6,7 +6,7 @@ import java.util.HashMap;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
-import uk.ac.cam.cl.xf214.blackadderCom.Node;
+import uk.ac.cam.cl.xf214.blackadderCom.BANode;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiver;
 import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
@@ -23,7 +23,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAScope;
 
 public class VoiceProxy {
 	public static enum VoiceCodec {PCM, SPEEX};
-	public static final String TAG = "AndroidVoiceProxy";
+	public static final String TAG = "VoiceProxy";
 	public static final byte STRATEGY = Strategy.DOMAIN_LOCAL;
 	public static final int DEFAULT_SAMPLE_RATE = 22050; 
 	public static final byte[] VOICE_SCOPE_ID = BAHelper.hexToByte("2222222222222222");
@@ -52,7 +52,7 @@ public class VoiceProxy {
 	private boolean receive;
 	private boolean released;
 	
-	public VoiceProxy(Node node) {
+	public VoiceProxy(BANode node) {
 		this.wrapper = node.getWrapper();
 		this.classifier = node.getClassifier();
 		this.wakeLock = node.getWakeLock();
@@ -138,7 +138,7 @@ public class VoiceProxy {
 			
 			Log.i(TAG, "Registering control queue with prefix: " + scope.getIdHex());
 			// 1. register control queue
-			classifier.registerControlQueue(scope.getFullId(), eventHandler);
+			classifier.registerControlEventHandler(scope.getFullId(), eventHandler);
 			// from now proxy is able to receive events about unmapped new stream (so new streams can be created)
 			
 			// 2. subscribe voice scope
@@ -157,7 +157,7 @@ public class VoiceProxy {
 			// 2. unregister control queue
 			Log.i(TAG, "Unregistering control queue with prefix: " + scope.getIdHex());
 			// from now the proxy stops to receive any new control events
-			classifier.unregisterControlQueue(scope.getFullId());
+			classifier.unregisterControlEventHandler(scope.getFullId());
 			
 			// 3. terminate all active player
 			VoicePlayer[] playerList = null;

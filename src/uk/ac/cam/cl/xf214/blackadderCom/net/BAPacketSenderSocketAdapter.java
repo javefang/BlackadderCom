@@ -61,7 +61,7 @@ public class BAPacketSenderSocketAdapter extends BAPacketSender {
 						// read data packet from socket to buffer
 						readFully(buf, 0, buf.length);
 						// send data in the buffer via Blackadder
-						send(buf);
+						send(buf, 0);
 					}
 				} catch (IOException e1) {
 					Log.e(TAG, "IOException caught while getting input stream from recvSocket, abort...");

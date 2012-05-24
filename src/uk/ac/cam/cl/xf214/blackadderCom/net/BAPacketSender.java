@@ -25,9 +25,9 @@ public class BAPacketSender {
 	private BAItem item;
 	private byte[] fullId;
 	private BAPushControlEventHandler eventHandler;
+	private boolean canPublish;
 	//private int pktCount;
 	
-	private volatile boolean canPublish;
 	private volatile boolean released;
 	
 	public BAPacketSender(final BAWrapperNB wrapper, final HashClassifierCallback classifier, final BAItem item) {
@@ -41,8 +41,8 @@ public class BAPacketSender {
 			public void startPublish(BAEvent event) {
 				Log.i(TAG, "START_PUBLISH called");
 				if (Arrays.equals(event.getId(), fullId)) {
-					canPublish = true;
 					Log.i(TAG, "Start publishing stream " + item.getIdHex());
+					canPublish = true;
 				} else {
 					Log.e(TAG, "Incorrect scope id for START_PUBLISH event, event id is " + BAHelper.byteToHex(event.getId()));
 				}
@@ -53,8 +53,8 @@ public class BAPacketSender {
 			public void stopPublish(BAEvent event) {
 				Log.i(TAG, "STOP_PUBLISH called");
 				if (Arrays.equals(event.getId(), fullId)) {
-					canPublish = false;
 					Log.i(TAG, "Stop publishing stream " + item.getIdHex());
+					canPublish = false;
 				} else {
 					Log.e(TAG, "Incorrect scope id for STOP_PUBLISH event, event id is " + BAHelper.byteToHex(event.getId()));
 				}
@@ -64,34 +64,33 @@ public class BAPacketSender {
 		
 		// register listener for start stop publishing
 		Log.i(TAG, "Registering control queue with prefix: " + item.getIdHex());
-		classifier.registerControlQueue(fullId, eventHandler);
+		classifier.registerControlEventHandler(fullId, eventHandler);
 		
 		// publish item
 		wrapper.publishItem(item.getId(), item.getPrefix(), STRATEGY, null);
 		Log.i(TAG, "BAPacketSender initialization complete!");
 	}
 	
-	public void send(byte[] data) {
+	public void send(byte[] data, int length) {
 		if (canPublish) {
-			wrapper.publishData(fullId, STRATEGY, null, data);
+			wrapper.publishData(fullId, STRATEGY, null, data, length);
 		}
 	}
 	
-	public void sendDirect(ByteBuffer data) {
+	public void sendDirect(ByteBuffer data, int off, int length) {
 		if (canPublish) {
-			wrapper.publishData(fullId, STRATEGY, null, data);
+			wrapper.publishData(fullId, STRATEGY, null, data, length);
 		}
 	}
 	
 	public void release() {
 		// unpublish item
 		if (!released) {
-			send(FIN_PKT);	// termination mark
+			send(FIN_PKT, 0);	// termination mark
 			released = true;
-			canPublish = false;	// prevent further send operation
 			wrapper.unpublishItem(item.getId(), item.getPrefix(), STRATEGY, null);
 			Log.i(TAG, "Unregistering control queue with prefix: " + item.getIdHex());
-			classifier.unregisterControlQueue(fullId);
+			classifier.unregisterControlEventHandler(fullId);
 		}
 	}
 }

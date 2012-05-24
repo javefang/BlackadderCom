@@ -16,7 +16,7 @@ import android.media.AudioTrack;
 import android.util.Log;
 
 public class VoicePlayer extends Thread {
-	public static final String TAG = "AndroidVoicePlayer";
+	public static final String TAG = "VoicePlayer";
 	public static final int STREAM_TYPE = AudioManager.STREAM_MUSIC;
 	public static final int SAMPLE_RATE = 22050;
 	public static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_OUT_MONO;

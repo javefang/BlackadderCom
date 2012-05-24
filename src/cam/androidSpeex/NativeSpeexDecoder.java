@@ -2,8 +2,6 @@ package cam.androidSpeex;
 
 import java.nio.ByteBuffer;
 
-
-	
 public class NativeSpeexDecoder implements SpeexDef {
 	public static final int DEFAULT_SPEEX_MODEID = SPEEX_MODEID_UWB;
 	

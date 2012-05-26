@@ -1,3 +1,19 @@
 Android Audio/Video Communication Tool over Blackadder
 
-(Details coming soon!)
+What you need:
+- A rooted Android phone with system version of at least Android 2.3.3, with "USB debugging" enabled.
+- Blackadder domain RV and TM nodes set up in DOMAIN_LOCAL mode.
+- Blackadder node program installed and started on the phone.
+- (Optional) BlackadderSetting application installed to start/stop the node program.
+- Latest version of Android SDK
+- Latest version of Android NDK
+- Eclipse IDE
+
+== How to Install ==
+1. Get the Blackadder wrapper library 'BlackadderJNIWrapper' from my github.
+2. Follow the instructions to set up the wrapper for use in Android project.
+3. Connect the Android phone by USB cable.
+4. Start the BlackadderCom project "as Android application" in Eclipse IDE.
+5. Wait for application start on the phone screen.
+
+(More detailed version of this HOW-TO will follow soon)

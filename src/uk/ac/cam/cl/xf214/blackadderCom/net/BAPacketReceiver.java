@@ -1,7 +1,7 @@
 package uk.ac.cam.cl.xf214.blackadderCom.net;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -60,7 +60,7 @@ public class BAPacketReceiver {
 	
 	public void drainDataQueue() {
 		// drain the queue. free all memory
-		Vector<BAEvent> wasteEventQueue = new Vector<BAEvent>();
+		ArrayList<BAEvent> wasteEventQueue = new ArrayList<BAEvent>();
 		dataQueue.drainTo(wasteEventQueue);
 		for (BAEvent event : wasteEventQueue) {
 			event.freeNativeBuffer();

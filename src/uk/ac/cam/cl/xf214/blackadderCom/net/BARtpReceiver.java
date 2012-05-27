@@ -2,7 +2,7 @@ package uk.ac.cam.cl.xf214.blackadderCom.net;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +26,7 @@ public class BARtpReceiver implements BAPushDataEventHandler {
 	private int mQueueSize;
 	private BARtpPacketHeader mPktHeader;
 	
-	private Vector<BAEvent> curGranuleFragmentQueue;
+	private ArrayList<BAEvent> curGranuleFragmentQueue;
 	private int curRtpDataLen = 0;
 	private int curGranule = -1;
 	private int curSeq = -1;
@@ -39,7 +39,7 @@ public class BARtpReceiver implements BAPushDataEventHandler {
 		classifier.registerDataEventHandler(rid, this);
 		
 		dataQueue = new ArrayBlockingQueue<BARtpPacket>(mQueueSize);
-		curGranuleFragmentQueue = new Vector<BAEvent>();
+		curGranuleFragmentQueue = new ArrayList<BAEvent>();
 		mPktHeader = new BARtpPacketHeader();
 	}
 	

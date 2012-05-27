@@ -5,19 +5,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Vector;
 
 import de.mjpegsample.MjpegView;
 import de.mjpegsample.NativeJpegLib;
 import uk.ac.cam.cl.xf214.DebugTool.LocalDebugger;
 import uk.ac.cam.cl.xf214.blackadderCom.androidVideo.VideoProxy;
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy;
-import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
-import uk.ac.cam.cl.xf214.blackadderWrapper.BAWrapperNB;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAWrapperShared;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAObject;
 import android.app.Activity;
@@ -42,7 +40,6 @@ import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -50,8 +47,6 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Spinner;
@@ -191,7 +186,7 @@ public class BlackadderComActivity extends Activity {
 				return lhs.width - rhs.width;
 			}
         });
-    	Vector<String> camSupportedSizeStr = new Vector<String>(camSupportedSize.size());
+    	ArrayList<String> camSupportedSizeStr = new ArrayList<String>(camSupportedSize.size());
     	for (Camera.Size size : camSupportedSize) {
     		camSupportedSizeStr.add(size.width + "x" + size.height);
     	}

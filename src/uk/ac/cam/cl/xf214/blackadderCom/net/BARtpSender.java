@@ -26,19 +26,19 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.ByteHelper;
  * incrementing from 0 to Short.MAX_VALUE
  */
 
-public class BARtpPublisher {
+public class BARtpSender {
 	public static final String TAG = "BARtpSender";
 	public static final int PAYLOAD_SIZE = 1400;
 	public static final int HEADER_SIZE = 14; // (4 bytes granule, 2 bytes seq, 8 bytes timestamp)
 	public static final int PKT_SIZE = HEADER_SIZE + PAYLOAD_SIZE;
 	public static final byte[] FIN_PKT = new byte[0];
 	
-	private BAPacketPublisher mSender;
+	private BAPacketSender mSender;
 	private byte[] mPktBuf;
 	
 	private boolean released;
 	
-	public BARtpPublisher(BAPacketPublisher sender) {
+	public BARtpSender(BAPacketSender sender) {
 		mSender = sender;
 		mPktBuf = new byte[PKT_SIZE];
 	}

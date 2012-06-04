@@ -6,25 +6,25 @@ import de.mjpegsample.MjpegDataInput;
 import de.mjpegsample.MjpegView;
 import de.mjpegsample.OnErrorListener;
 import android.util.Log;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSubscriber;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpReceiver;
 import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
 
 public class VideoPlayer implements OnErrorListener {
 	public static final String TAG = "VideoPlayer";
 	public static final int RESYNC_THRESHOLD = 10;	// player will resync when queue has 10 unhandled event
 	
-	private BARtpSubscriber mReceiver;
+	private BARtpReceiver mReceiver;
 	private MjpegView mView;
 	private StreamFinishedListener mStreamFinishedListener;
 	private volatile boolean released;
 	
-	public VideoPlayer(BARtpSubscriber receiver,
+	public VideoPlayer(BARtpReceiver receiver,
 			StreamFinishedListener sfLis) {
 		mReceiver = receiver;
 		mStreamFinishedListener = sfLis;
 	}
 	
-	public BARtpSubscriber getReceiver() {
+	public BARtpReceiver getReceiver() {
 		return mReceiver;
 	}
 	

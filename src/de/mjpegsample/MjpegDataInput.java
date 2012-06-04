@@ -7,14 +7,14 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpPacket;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSubscriber;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpReceiver;
 
 public class MjpegDataInput {
 	public static final String TAG = "MjpegDataInput";
 	public static final long DEFAULT_FRAME_TIMEOUT = 800;
-	private BARtpSubscriber mReceiver;
+	private BARtpReceiver mReceiver;
 	
-	public MjpegDataInput(BARtpSubscriber receiver) {
+	public MjpegDataInput(BARtpReceiver receiver) {
 		mReceiver = receiver;
 	}
 	

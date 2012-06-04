@@ -16,7 +16,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAItem;
 
 
-public class BAPacketPublisherSocketAdapter extends BAPacketPublisher {
+public class BAPacketSenderSocketAdapter extends BAPacketSender {
 	public static final String TAG = "BAPacketSenderSocketAdapter";
 	public static final String DEFAULT_SOCKET_NAME = "BAVideoSender";
 	
@@ -27,7 +27,7 @@ public class BAPacketPublisherSocketAdapter extends BAPacketPublisher {
 	
 	private volatile boolean released;
 	
-	public BAPacketPublisherSocketAdapter(BAWrapperNB wrapper, HashClassifierCallback classifier, BAItem item) throws IOException {
+	public BAPacketSenderSocketAdapter(BAWrapperNB wrapper, HashClassifierCallback classifier, BAItem item) throws IOException {
 		super(wrapper, classifier, item);
 		
 		// Set up Socket->Blackadder bridge

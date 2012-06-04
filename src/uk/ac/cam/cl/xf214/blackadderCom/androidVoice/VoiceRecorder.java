@@ -3,7 +3,7 @@ package uk.ac.cam.cl.xf214.blackadderCom.androidVoice;
 import cam.androidSpeex.NativeSpeexEncoder;
 
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketPublisher;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -28,7 +28,7 @@ public class VoiceRecorder extends Thread {
 	private int pktSizeByte;
 	private int speexFrameSize;
 	private boolean released;
-	private BAPacketPublisher sender;
+	private BAPacketSender sender;
 	private AudioRecord mRec;
 	
 	
@@ -40,7 +40,7 @@ public class VoiceRecorder extends Thread {
 	/* Speex Encoder Settings */
 	private NativeSpeexEncoder encoder;
 	
-	public VoiceRecorder(BAPacketPublisher sender, int pktSizeByte, VoiceCodec codec, int sampleRate) {
+	public VoiceRecorder(BAPacketSender sender, int pktSizeByte, VoiceCodec codec, int sampleRate) {
 		released = false;
 		this.sender = sender;
 		this.pktSizeByte = pktSizeByte;

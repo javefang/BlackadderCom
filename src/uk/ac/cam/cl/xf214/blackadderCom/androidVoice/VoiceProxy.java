@@ -7,8 +7,8 @@ import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
 import uk.ac.cam.cl.xf214.blackadderCom.BANode;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSubscriber;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketPublisher;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiver;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
 import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAEvent;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
@@ -92,7 +92,7 @@ public class VoiceProxy {
 				}
 			}
 		};
-		BAPacketSubscriber receiver = new BAPacketSubscriber(classifier, id);
+		BAPacketReceiver receiver = new BAPacketReceiver(classifier, id);
 		VoicePlayer player = new VoicePlayer(receiver, codec, sfl, sampleRate);
 		streamMap.put(idHash, player);
 		player.start();
@@ -106,7 +106,7 @@ public class VoiceProxy {
 		send = enabled;
 		if (enabled) {	// start streaming
 			wakeLock.acquire();
-			BAPacketPublisher sender = new BAPacketPublisher(wrapper, classifier, item);
+			BAPacketSender sender = new BAPacketSender(wrapper, classifier, item);
 			recorder = new VoiceRecorder(sender, BAWrapperShared.DEFAULT_PKT_SIZE, codec, sampleRate);
 			recorder.start();
 		} else {	// stop streaming

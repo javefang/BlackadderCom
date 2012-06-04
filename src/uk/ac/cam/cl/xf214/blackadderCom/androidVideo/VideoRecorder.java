@@ -6,7 +6,7 @@ import java.util.List;
 import de.mjpegsample.MjpegDataOutput;
 import de.mjpegsample.OnErrorListener;
 
-import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketPublisher;
 import android.graphics.ImageFormat;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
@@ -23,7 +23,7 @@ public class VideoRecorder extends Thread {
 	public static final int FRAME_BUFFER_SIZE = 3;
 	
 	private Camera mCamera;
-	private BAPacketSender mSender;
+	private BAPacketPublisher mSender;
 	private MjpegDataOutput mjpegDataOutput;
 	private SurfaceView preview;
 	private SurfaceHolder mSurfaceHolder;
@@ -36,7 +36,7 @@ public class VideoRecorder extends Thread {
 	private int mQuality;
 	private int mFrameRate;
 	
-	public VideoRecorder(BAPacketSender sender, SurfaceView preview, int width, int height, int quality, int frameRate) throws IOException {
+	public VideoRecorder(BAPacketPublisher sender, SurfaceView preview, int width, int height, int quality, int frameRate) throws IOException {
 		this.mWidth = width;
 		this.mHeight = height;
 		this.mQuality = quality;

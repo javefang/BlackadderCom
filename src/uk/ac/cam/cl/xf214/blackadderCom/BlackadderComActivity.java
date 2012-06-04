@@ -14,6 +14,7 @@ import de.mjpegsample.MjpegView;
 import de.mjpegsample.NativeJpegLib;
 import uk.ac.cam.cl.xf214.DebugTool.LocalDebugger;
 import uk.ac.cam.cl.xf214.blackadderCom.androidVideo.VideoProxy;
+import uk.ac.cam.cl.xf214.blackadderCom.androidVideo.VideoRecorder;
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAWrapperShared;
@@ -177,7 +178,7 @@ public class BlackadderComActivity extends Activity {
     	});
     	
     	// get camera spec
-    	Camera camera = Camera.open();	// opening camera
+    	Camera camera = Camera.open(VideoRecorder.CAM_ID);	// opening camera
         Camera.Parameters cameraParameters = camera.getParameters();
         List<Camera.Size> camSupportedSize = cameraParameters.getSupportedPreviewSizes();
         Collections.sort(camSupportedSize, new Comparator<Camera.Size>() {
@@ -211,7 +212,6 @@ public class BlackadderComActivity extends Activity {
 			}
     	});
     	
-    	//final int STEP_SIZE = 10;
     	final int MIN_SIZE = 1;
     	videoQualityBar.setProgress(5);
     	videoQualityBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {

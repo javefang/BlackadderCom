@@ -19,6 +19,7 @@ import android.view.SurfaceView;
 
 public class VideoRecorder extends Thread {
 	public static final String TAG = "VideoRecorder";
+	public static final int CAM_ID = 0;
 	public static final int FRAME_BUFFER_SIZE = 3;
 	
 	private Camera mCamera;
@@ -84,7 +85,7 @@ public class VideoRecorder extends Thread {
 		}
 		
 		Log.i(TAG, "Initialising camera preview...");
-		mCamera = Camera.open();
+		mCamera = Camera.open(CAM_ID);
 		// use camera preview
 		Camera.Parameters camParams = mCamera.getParameters();
 		camParams.setPreviewFormat(ImageFormat.NV21);

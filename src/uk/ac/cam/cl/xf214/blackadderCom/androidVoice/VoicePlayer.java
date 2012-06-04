@@ -5,7 +5,7 @@ import java.util.concurrent.BlockingQueue;
 import cam.androidSpeex.NativeSpeexDecoder;
 
 import uk.ac.cam.cl.xf214.blackadderCom.androidVoice.VoiceProxy.VoiceCodec;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketReceiver;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSubscriber;
 import uk.ac.cam.cl.xf214.blackadderCom.net.StreamFinishedListener;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAEvent;
 import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
@@ -32,7 +32,7 @@ public class VoicePlayer extends Thread {
 	public static final int SPX_MODE = 1;	// 1=WB
 	public static final boolean SPX_ENHANCED = true; // perceptual enhancement
 	
-	private BAPacketReceiver receiver;
+	private BAPacketSubscriber receiver;
 	private BlockingQueue<BAEvent> recvQueue;
 	private AudioTrack mAudioTrack;
 	private volatile boolean released;
@@ -44,14 +44,14 @@ public class VoicePlayer extends Thread {
 	private int targetBuffer = TARGET_BUFFER;
 	
 	//private int hashId; // used for identifying player
-	public VoicePlayer(BAPacketReceiver receiver, VoiceCodec codec, StreamFinishedListener streamFinishedListener, int sampleRate) {
+	public VoicePlayer(BAPacketSubscriber receiver, VoiceCodec codec, StreamFinishedListener streamFinishedListener, int sampleRate) {
 		this(receiver, codec, streamFinishedListener);
 		this.sampleRate = sampleRate;
 		this.targetBuffer = (int)(sampleRate * 2 * TARGET_DELAY / 1000.0d);
 	}
 	
 	@Deprecated
-	public VoicePlayer(BAPacketReceiver receiver, VoiceCodec codec, StreamFinishedListener streamFinishedListener) {
+	public VoicePlayer(BAPacketSubscriber receiver, VoiceCodec codec, StreamFinishedListener streamFinishedListener) {
 		this.receiver = receiver;
 		this.mStreamFinishedListener = streamFinishedListener;
 		this.recvQueue = receiver.getDataQueue();
@@ -60,7 +60,7 @@ public class VoicePlayer extends Thread {
 		
 	}
 	
-	public BAPacketReceiver getReceiver() {
+	public BAPacketSubscriber getReceiver() {
 		return receiver;
 	}
 	

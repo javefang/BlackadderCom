@@ -9,8 +9,8 @@ import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.util.Log;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketSender;
-import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpSenderOutputStream;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BAPacketPublisher;
+import uk.ac.cam.cl.xf214.blackadderCom.net.BARtpPublisherOutputStream;
 
 public class MjpegDataOutput extends Thread {
 	public static final String TAG = "MjpegDataOutput";
@@ -27,7 +27,7 @@ public class MjpegDataOutput extends Thread {
 	private Rect mRect;
 	private YuvImage[] mYuvBuffer;
 	private HashMap<byte[], YuvImage> mYuvBufferIndex;
-	private BARtpSenderOutputStream mJpegOutputStream;
+	private BARtpPublisherOutputStream mJpegOutputStream;
 	private Camera mCam;
 	private OnErrorListener mOnErrorListener;
 	
@@ -36,7 +36,7 @@ public class MjpegDataOutput extends Thread {
 	
 	private int curGranule = 0;
 	
-	public MjpegDataOutput(BAPacketSender sender, int width, int height, int quality, int frameBufSize, int frameRate, Camera cam, OnErrorListener onErrorListener) {
+	public MjpegDataOutput(BAPacketPublisher publisher, int width, int height, int quality, int frameBufSize, int frameRate, Camera cam, OnErrorListener onErrorListener) {
 		//mSender = sender;
 		mWidth = width;
 		mHeight = height;
@@ -58,7 +58,7 @@ public class MjpegDataOutput extends Thread {
 			mYuvBufferIndex.put(data, mYuvBuffer[i]);
 		}
 		
-		mJpegOutputStream = new BARtpSenderOutputStream(sender);
+		mJpegOutputStream = new BARtpPublisherOutputStream(publisher);
 	}
 	
 	public void run() {

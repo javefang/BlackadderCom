@@ -14,7 +14,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.callback.BAPushControlEventHandler;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 import uk.ac.cam.cl.xf214.blackadderWrapper.data.BAItem;
 
-public class BAPacketSender {
+public class BAPacketPublisher {
 	public static final String TAG = "BAPacketSender";
 	public static final byte STRATEGY = Strategy.DOMAIN_LOCAL;
 	public static final byte[] FIN_PKT = new byte[0];
@@ -30,7 +30,7 @@ public class BAPacketSender {
 	
 	private volatile boolean released;
 	
-	public BAPacketSender(final BAWrapperNB wrapper, final HashClassifierCallback classifier, final BAItem item) {
+	public BAPacketPublisher(final BAWrapperNB wrapper, final HashClassifierCallback classifier, final BAItem item) {
 		this.released = false;
 		this.wrapper = wrapper;
 		this.classifier = classifier;

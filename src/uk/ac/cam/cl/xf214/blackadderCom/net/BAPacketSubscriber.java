@@ -12,7 +12,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.BAPushDataEventHandler;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 
-public class BAPacketReceiver {
+public class BAPacketSubscriber {
 	public static final String TAG = "BAPacketReceiver";
 	public static final int RESYNC_THRESHOLD = 1000;
 	private byte[] rid;
@@ -20,7 +20,7 @@ public class BAPacketReceiver {
 	private HashClassifierCallback classifier;
 	private volatile boolean released;
 	
-	public BAPacketReceiver(HashClassifierCallback classifier, byte[] rid) {
+	public BAPacketSubscriber(HashClassifierCallback classifier, byte[] rid) {
 		this.released = false;
 		this.classifier = classifier;
 		this.rid = Arrays.copyOf(rid, rid.length);

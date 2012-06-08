@@ -16,7 +16,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.BAHelper;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 
 
-public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
+public class BAPacketSubscriberSocketAdapter extends BAPacketSubscriber {
 	public static final String TAG = "BAPacketReceiverSocketAdapter";
 	public static final String DEFAULT_SOCKET_NAME = "BAVideoReceiver";
 	public static final int RESYNC_THRESHOLD = 1000;	// player will resync when queue has 10 unhandled event
@@ -30,7 +30,7 @@ public class BAPacketReceiverSocketAdapter extends BAPacketReceiver {
 	private volatile boolean receive;
 	private volatile boolean released;
 	
-	public BAPacketReceiverSocketAdapter(HashClassifierCallback classifier,
+	public BAPacketSubscriberSocketAdapter(HashClassifierCallback classifier,
 			byte[] rid) throws IOException {
 		super(classifier, rid);
 		String ridStr = BAHelper.byteToHex(rid);

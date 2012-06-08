@@ -4,15 +4,15 @@
     <string name="hello">Hello World, BlackadderComActivity!</string>
     <string name="app_name">VOBA</string>
     <string name="clientIdHint">Enter client ID</string>
-    <string name="receiveVoice">Receive Voice</string>
-    <string name="sendVoice">Send Voice</string>
+    <string name="receiveVoice">Subscribe Voice</string>
+    <string name="sendVoice">Publish Voice</string>
     <string name="init">Initialise</string>
     <string name="test">Test</string>
     <string name="codec_pcm">PCM</string>
     <string name="codec_speex">Speex</string>
     <string name="ptt">Push to Talk</string>
-    <string name="sendVideo">Send Video</string>
-    <string name="recvVideo">Receive Video</string>
+    <string name="sendVideo">Publish Video</string>
+    <string name="recvVideo">Subscribe Video</string>
     
     <string-array name="sample_rate">
         <item >16 kHz</item>

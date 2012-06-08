@@ -12,7 +12,7 @@ import uk.ac.cam.cl.xf214.blackadderWrapper.BAEvent;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.BAPushDataEventHandler;
 import uk.ac.cam.cl.xf214.blackadderWrapper.callback.HashClassifierCallback;
 
-public class BARtpReceiver implements BAPushDataEventHandler {
+public class BARtpSubscriber implements BAPushDataEventHandler {
 	public static final String TAG = "BARtpReceiver";
 	//public static final int DEFAULT_QUEUE_SIZE = 60;	// 60 frames
 	public static final long READ_TIMEOUT_MS = 500;
@@ -32,7 +32,7 @@ public class BARtpReceiver implements BAPushDataEventHandler {
 	private int curSeq = -1;
 	private long curTimestamp = -1;
 	
-	public BARtpReceiver(HashClassifierCallback classifier, byte[] rid, int queueSize) {
+	public BARtpSubscriber(HashClassifierCallback classifier, byte[] rid, int queueSize) {
 		mQueueSize = queueSize;
 		mClassifier = classifier;
 		mRid = rid;

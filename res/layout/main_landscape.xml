@@ -115,6 +115,7 @@
                 <SeekBar
                     android:id="@+id/sb_videoQuality"
                     android:layout_width="200dp"
+                    android:paddingRight="30dp"
                     android:layout_height="wrap_content" android:max="10" android:progress="1"/>
 
             </LinearLayout>
@@ -141,6 +142,7 @@
                     android:layout_weight="1"
                     android:text="@string/init" />
             </LinearLayout>
+            
         </LinearLayout>
     </SlidingDrawer>
 

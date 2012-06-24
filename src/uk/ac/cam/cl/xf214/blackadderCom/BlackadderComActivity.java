@@ -68,6 +68,7 @@ public class BlackadderComActivity extends Activity {
 	private BANode node;
 	private VoiceProxy voiceProxy;
 	private VideoProxy videoProxy;
+	//private SpeedTestProxy speedProxy;
 	private WakeLock wakeLock;
 	//private boolean finished;
 	private EditText userIdInput;
@@ -93,6 +94,7 @@ public class BlackadderComActivity extends Activity {
         setContentView(R.layout.main_landscape);
         initVoiceUI(); 
         initVideoUI();
+        //initSpeedUI();
         setUIEnabled(btnInit, false);
         
         runTest(false);
@@ -108,6 +110,7 @@ public class BlackadderComActivity extends Activity {
         	node = new BANode(roomId, clientId, wakeLock);
         	voiceProxy = new VoiceProxy(node);
         	videoProxy = new VideoProxy(node, views, preview);
+        	//speedProxy = new SpeedTestProxy(node);
         	setUIEnabled(btnInit, true);
         	return true;
         } else {
@@ -142,6 +145,26 @@ public class BlackadderComActivity extends Activity {
     	});
     }
     
+    /*
+    private void initSpeedUI() {
+    	ToggleButton tbPubSpeed = (ToggleButton)findViewById(R.id.tb_pubSpeed);
+    	ToggleButton tbSubSpeed = (ToggleButton)findViewById(R.id.tb_subSpeed);
+    	
+    	tbPubSpeed.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				speedProxy.setPublish(isChecked);
+			}
+    	});
+    	
+    	tbSubSpeed.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				speedProxy.setSubscribe(isChecked);
+			}
+    	});
+    }
+    */
     
     private void initVideoUI() {
     	views = new MjpegView[3];

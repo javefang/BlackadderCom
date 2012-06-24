@@ -13,6 +13,8 @@
     <string name="ptt">Push to Talk</string>
     <string name="sendVideo">Publish Video</string>
     <string name="recvVideo">Subscribe Video</string>
+    <string name="pubSpeed">Publish Speed</string>
+    <string name="subSpeed">Subscribe Speed</string>
     
     <string-array name="sample_rate">
         <item >16 kHz</item>
